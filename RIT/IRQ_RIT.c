@@ -10,6 +10,7 @@
 #include "LPC17xx.h"
 #include "RIT.h"
 #include "../led/led.h"
+#include "../GLCD/GLCD.h"
 
 /******************************************************************************
 ** Function name:		RIT_IRQHandler
@@ -35,48 +36,77 @@ void RIT_IRQHandler (void)
 	if((LPC_GPIO1->FIOPIN & (1<<29)) == 0){	
 		/* Joystick UP pressed */
 		J_up++;
+
 		switch(J_up){
 			case 1:
 				/*pacman moves up*/
 				break;
-			default:
-				break;
-		}
-	}else if((LPC_GPIO1->FIOPIN & (1<<28)) == 0){
-		/* Joystick RIGHT pressed */
-		J_right++;
-		switch(J_right){
-			case 1:
-				/*pacman moves right*/
-				break;
-			default:
-				break;
-		}
-	}else if((LPC_GPIO1->FIOPIN & (1<<27)) == 0){
-		/* Joystick LEFT pressed */
-		J_left++;
-		switch(J_left){
-			case 1:
-				/*pacman moves left*/
-				break;
-			default:
-				break;
-		}
-	}else if((LPC_GPIO1->FIOPIN & (1<<26)) == 0){
-		/* Joystick DOWN pressed */
-		J_down++;
-		switch(J_down){
-			case 1:
-				/*pacman moves down*/
+			case 3:
+				LCD_Clear(Black);
+				GUI_Text(10,160, (uint8_t*) "Popi sto andando in su", Red, White);
 				break;
 			default:
 				break;
 		}
 	}else{
 		J_up = 0;
-		J_down = 0;
-		J_left = 0;
+	}
+	
+	if((LPC_GPIO1->FIOPIN & (1<<28)) == 0){
+		/* Joystick RIGHT pressed */
+		J_right++;
+
+		switch(J_right){
+			case 1:
+				/*pacman moves right*/
+				break;
+			case 3:
+				LCD_Clear(Black);
+				GUI_Text(10,160, (uint8_t*) "Popi sto andando a destra", Red, White);
+				break;
+			default:
+				break;
+		}
+	}else{
 		J_right = 0;
+	}
+	
+	if((LPC_GPIO1->FIOPIN & (1<<27)) == 0){
+		/* Joystick LEFT pressed */
+		J_left++;
+		
+		switch(J_left){
+			case 1:
+				/*pacman moves left*/
+				break;
+			case 3:
+				LCD_Clear(Black);
+				GUI_Text(10,160, (uint8_t*) "Popi sto andando a sinistra", Red, White);
+				break;
+			default:
+				break;
+		}
+	}else{
+		J_left = 0;
+	}
+	
+	if((LPC_GPIO1->FIOPIN & (1<<26)) == 0){
+		/* Joystick DOWN pressed */
+		J_down++;
+
+		switch(J_down){
+			case 1:
+				/*pacman moves down*/
+				break;
+			case 3:
+				LCD_Clear(Black);
+				GUI_Text(10,160, (uint8_t*) "Popi sto andando giu", Red, White);
+				break;
+			default:
+				break;
+		}
+	}else{
+		J_down = 0;
 	}
 	
 	/* button management */

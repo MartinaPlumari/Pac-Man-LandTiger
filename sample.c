@@ -20,6 +20,7 @@
 #include "timer/timer.h"
 #include "RIT/RIT.h"
 #include "joystick/joystick.h"
+#include "GLCD/GLCD.h"
 
 #ifdef SIMULATOR
 extern uint8_t ScaleFlag; // <- ScaleFlag needs to visible in order for the emulator to find the symbol (can be placed also inside system_LPC17xx.h but since it is RO, it needs more work)
@@ -33,6 +34,10 @@ int main (void) {
   LED_init();                           /* LED Initialization                 */
   BUTTON_init();												/* BUTTON Initialization              */
 	joystick_init();											/* Joystick Initialization            */
+	LCD_Initialization();
+	LCD_Clear(Yellow);
+	LCD_Clear(Black);
+	
 	init_RIT(0x004C4B40);									/* RIT Initialization 50 msec       	*/
 	enable_RIT();													/* RIT enabled												*/
 	
