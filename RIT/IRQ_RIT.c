@@ -21,57 +21,79 @@
 **
 ******************************************************************************/
 
-volatile int down=0;
+volatile int B_down=0;
 
 void RIT_IRQHandler (void)
 {					
-	static int up=0;
-	static int position=0;	
 	
+	static int J_up = 0;
+	static int J_down = 0;
+	static int J_right = 0;
+	static int J_left = 0;
+	
+	/*joystick behavior*/
 	if((LPC_GPIO1->FIOPIN & (1<<29)) == 0){	
-		/* Joytick UP pressed */
-		up++;
-		switch(up){
+		/* Joystick UP pressed */
+		J_up++;
+		switch(J_up){
 			case 1:
-				LED_Off(position);
-				LED_On(0);
-				position = 0;
-				break;
-			case 60:	//3sec = 3000ms/50ms = 60
-				LED_Off(position);
-				LED_On(7);
-				position = 7;
+				/*pacman moves up*/
 				break;
 			default:
 				break;
 		}
-	}
-	else{
-			up=0;
+	}else if((LPC_GPIO1->FIOPIN & (1<<28)) == 0){
+		/* Joystick RIGHT pressed */
+		J_right++;
+		switch(J_right){
+			case 1:
+				/*pacman moves right*/
+				break;
+			default:
+				break;
+		}
+	}else if((LPC_GPIO1->FIOPIN & (1<<27)) == 0){
+		/* Joystick LEFT pressed */
+		J_left++;
+		switch(J_left){
+			case 1:
+				/*pacman moves left*/
+				break;
+			default:
+				break;
+		}
+	}else if((LPC_GPIO1->FIOPIN & (1<<26)) == 0){
+		/* Joystick DOWN pressed */
+		J_down++;
+		switch(J_down){
+			case 1:
+				/*pacman moves down*/
+				break;
+			default:
+				break;
+		}
+	}else{
+		J_up = 0;
+		J_down = 0;
+		J_left = 0;
+		J_right = 0;
 	}
 	
 	/* button management */
-	if(down>=1){ 
-		if((LPC_GPIO2->FIOPIN & (1<<11)) == 0){	/* KEY1 pressed */
-			switch(down){				
+	if(B_down>=1){ 
+		if((LPC_GPIO2->FIOPIN & (1<<10)) == 0){	/* INT0 pressed */
+			switch(B_down){				
 				case 2:				/* pay attention here: please see slides to understand value 2 */
-				if( position == 7){
-					LED_On(0);
-					LED_Off(7);
-					position = 0;
-				}
-				else{
-					LED_Off(position);
-					LED_On(++position);
-				}
+				/*INT0 behavior*/
+				
 					break;
 				default:
 					break;
 			}
-			down++;
+			B_down++;
 		}
 		else {	/* button released */
-			down=0;			
+			B_down=0;			
 			NVIC_EnableIRQ(EINT1_IRQn);							 /* enable Button interrupts			*/
 			LPC_PINCON->PINSEL4    |= (1 << 22);     /* External interrupt 0 pin selection */
 		}
