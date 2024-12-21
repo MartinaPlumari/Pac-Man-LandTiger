@@ -9,8 +9,8 @@
 *********************************************************************************************************/
 #include "LPC17xx.h"
 #include "RIT.h"
-#include "../led/led.h"
 #include "../GLCD/GLCD.h"
+#include "../Game/game.h"
 
 /******************************************************************************
 ** Function name:		RIT_IRQHandler
@@ -22,7 +22,9 @@
 **
 ******************************************************************************/
 
+//1 s = 20 chiamate a RIT_IRQ
 volatile int B_down=0;
+
 
 void RIT_IRQHandler (void)
 {					
@@ -32,6 +34,8 @@ void RIT_IRQHandler (void)
 	static int J_right = 0;
 	static int J_left = 0;
 	
+	//riscrivere codice -> fare file di libreria più carini
+	
 	/*joystick behavior*/
 	if((LPC_GPIO1->FIOPIN & (1<<29)) == 0){	
 		/* Joystick UP pressed */
@@ -39,11 +43,7 @@ void RIT_IRQHandler (void)
 
 		switch(J_up){
 			case 1:
-				/*pacman moves up*/
-				break;
-			case 3:
-				LCD_Clear(Black);
-				GUI_Text(10,160, (uint8_t*) "Popi sto andando in su", Red, White);
+				pacman_change_dir(G_UP);
 				break;
 			default:
 				break;
@@ -58,11 +58,7 @@ void RIT_IRQHandler (void)
 
 		switch(J_right){
 			case 1:
-				/*pacman moves right*/
-				break;
-			case 3:
-				LCD_Clear(Black);
-				GUI_Text(10,160, (uint8_t*) "Popi sto andando a destra", Red, White);
+				pacman_change_dir(G_RIGHT);
 				break;
 			default:
 				break;
@@ -77,11 +73,7 @@ void RIT_IRQHandler (void)
 		
 		switch(J_left){
 			case 1:
-				/*pacman moves left*/
-				break;
-			case 3:
-				LCD_Clear(Black);
-				GUI_Text(10,160, (uint8_t*) "Popi sto andando a sinistra", Red, White);
+				pacman_change_dir(G_LEFT);
 				break;
 			default:
 				break;
@@ -96,11 +88,7 @@ void RIT_IRQHandler (void)
 
 		switch(J_down){
 			case 1:
-				/*pacman moves down*/
-				break;
-			case 3:
-				LCD_Clear(Black);
-				GUI_Text(10,160, (uint8_t*) "Popi sto andando giu", Red, White);
+				pacman_change_dir(G_DOWN);
 				break;
 			default:
 				break;
@@ -124,7 +112,7 @@ void RIT_IRQHandler (void)
 		}
 		else {	/* button released */
 			B_down=0;			
-			NVIC_EnableIRQ(EINT1_IRQn);							 /* enable Button interrupts			*/
+			NVIC_EnableIRQ(EINT0_IRQn);							 /* enable Button interrupts			*/
 			LPC_PINCON->PINSEL4    |= (1 << 22);     /* External interrupt 0 pin selection */
 		}
 	}
@@ -132,6 +120,8 @@ void RIT_IRQHandler (void)
 			if(down==1)
 				down++;
 	} */
+	
+	game_update();
 	
   LPC_RIT->RICTRL |= 0x1;	/* clear interrupt flag */
 	
