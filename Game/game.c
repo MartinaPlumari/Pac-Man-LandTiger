@@ -1,10 +1,14 @@
 #include "game.h"
+#include <stdio.h>
 #include "../GLCD/GLCD.h"
 #include "animationLib.h"
+#include "../timer/timer.h"
+
 
 #define START_X 100
 #define START_Y 100
 #define SPEED 5
+#define MAX_TIME 3
 
 /*ENTITY TYPE*/
 /* - posX and posY: current position												*/
@@ -19,8 +23,9 @@ typedef struct{
 	uint8_t anim_frame;
 }entity_state_t;
 
+
 volatile entity_state_t pacman;
-volatile uint8_t game_state;
+volatile game_state_t game_state;
 
 void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
 	
@@ -35,10 +40,24 @@ void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
 }
 
 void game_init(){
+	  char space[2] = "  ";
+		char counter_value[6];
+
 		LCD_Clear(Blue);
 		pacman_init(START_X, START_Y, SPEED);
-	
-	  game_state = PLAY;
+	  
+		/*print counter*/
+		game_state.counter = MAX_TIME;
+		if(game_state.counter >= 10)
+				sprintf(counter_value, "%s%s%d%s", space, " ", game_state.counter, space);
+		else
+					sprintf(counter_value, "%s%s%d%d%s", space, " ", 0, game_state.counter, space);
+
+		GUI_Text(0,0,(uint8_t *) "  TIME  ", White, Blue);
+		GUI_Text(0, 12, (uint8_t *) counter_value, White, Blue);
+		
+		
+	  game_state.curr_state = PLAY;
 }
 
 void game_update(){
@@ -78,21 +97,35 @@ void game_update(){
 
 void game_pause(){
 	
-	game_state = PAUSE;
+	game_state.curr_state = PAUSE;
 	
+	//rendere questo più carino e generalizzare in una funzione
 	GUI_Text(MAX_X/2-40, MAX_Y/2, (uint8_t *) "         ", Blue, Blue);
 	GUI_Text(MAX_X/2-40, MAX_Y/2, (uint8_t *) "  PAUSE  ", Black, White);
 	
 	//bloccare timer
+	disable_timer(0);
 }
 
 void game_resume(){
 	
-	game_state = PLAY;
+	game_state.curr_state = PLAY;
 	
 	GUI_Text(MAX_X/2-40, MAX_Y/2, (uint8_t *) "         ", Blue, Blue);
 	
 	//far riprendere il timer
+	enable_timer(0);
+}
+
+void game_over(){
+	
+	game_state.curr_state = GAME_OVER;
+	disable_timer(0);
+	
+	LCD_Clear(Black);
+	
+	//rendere questo più carino e generalizzare in una funzione
+	GUI_Text(MAX_X/2-55, MAX_Y/2, (uint8_t *) "  GAME OVER  ", Red, White);
 }
 
 void pacman_change_dir(uint8_t direction){
@@ -166,4 +199,22 @@ void pacman_clear(uint16_t Xpos, uint16_t Ypos){
 		}
 	}
 	
+}
+
+void counter_update(){
+				char space[2] = "  ";
+				char counter_value[6];
+	     
+				game_state.counter --;
+	
+				if(game_state.counter >= 10)
+					sprintf(counter_value, "%s%s%d%s", space, " ", game_state.counter, space);
+				else
+					sprintf(counter_value, "%s%s%d%d%s", space, " ", 0, game_state.counter, space);
+				
+				GUI_Text(0, 12, (uint8_t *) "      ", Blue, Blue);
+				GUI_Text(0, 12, (uint8_t *) counter_value, White, Blue);
+				
+				if(game_state.counter == 0)
+					game_over();
 }

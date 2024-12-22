@@ -36,7 +36,7 @@ void RIT_IRQHandler (void)
 	
 	//riscrivere codice -> fare file di libreria più carini
 	
-	if(game_state == PLAY){
+	if(game_state.curr_state == PLAY){
 		/*joystick behavior*/
 		if((LPC_GPIO1->FIOPIN & (1<<29)) == 0){	
 			/* Joystick UP pressed */
@@ -87,16 +87,15 @@ void RIT_IRQHandler (void)
 				switch(B_down){				
 					case 2:				/* pay attention here: please see slides to understand value 2 */
 					/*INT0 behavior*/
-						if(game_state == PLAY){
-							
+					
+					//pause and restart game when pressing the button
+						if(game_state.curr_state == PLAY){
 							game_pause();
-							
 						}
-						else if(game_state == PAUSE){
-							
+						else if(game_state.curr_state == PAUSE){
 							game_resume();
-							
 						}
+						
 						break;
 					default:
 						break;

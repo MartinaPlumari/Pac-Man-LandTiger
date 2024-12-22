@@ -7,8 +7,9 @@
 ** Correlated files:    timer.h
 **--------------------------------------------------------------------------------------------------------
 *********************************************************************************************************/
-#include "lpc17xx.h"
+#include "LPC17xx.h"
 #include "timer.h"
+#include "../Game/game.h"
 
 /******************************************************************************
 ** Function name:		Timer0_IRQHandler
@@ -19,14 +20,33 @@
 ** Returned value:		None
 **
 ******************************************************************************/
+extern unsigned char led_value;					/* defined in funct_led								*/
+
+unsigned char ledval = 0xA5;
+
 
 void TIMER0_IRQHandler (void)
 {
-
-  LPC_TIM0->IR = 1;			/* clear interrupt flag */
+	if(LPC_TIM0->IR & 1) // MR0
+	{ 
+		// your code
+		counter_update();
+		LPC_TIM0->IR = 1;			//clear interrupt flag
+	}
+	else if(LPC_TIM0->IR & 2){ // MR1
+		// your code	
+		LPC_TIM0->IR = 2;			// clear interrupt flag 
+	}
+	else if(LPC_TIM0->IR & 4){ // MR2
+		// your code	
+		LPC_TIM0->IR = 4;			// clear interrupt flag 
+	}
+	else if(LPC_TIM0->IR & 8){ // MR3
+		// your code	
+		LPC_TIM0->IR = 8;			// clear interrupt flag 
+	}
   return;
 }
-
 
 /******************************************************************************
 ** Function name:		Timer1_IRQHandler
@@ -39,10 +59,79 @@ void TIMER0_IRQHandler (void)
 ******************************************************************************/
 void TIMER1_IRQHandler (void)
 {
-  LPC_TIM1->IR = 1;			/* clear interrupt flag */
+	if(LPC_TIM1->IR & 1) // MR0
+	{ 
+		LPC_TIM1->IR = 1;			//clear interrupt flag
+	}
+	else if(LPC_TIM1->IR & 2){ // MR1
+		LPC_TIM1->IR = 2;			// clear interrupt flag 
+	}
+	else if(LPC_TIM1->IR & 4){ // MR2
+		// your code	
+		LPC_TIM1->IR = 4;			// clear interrupt flag 
+	}
+	else if(LPC_TIM1->IR & 8){ // MR3
+		// your code	
+		LPC_TIM1->IR = 8;			// clear interrupt flag 
+	} 
+
+	return;
+}
+
+/******************************************************************************
+** Function name:		Timer2_IRQHandler
+**
+** Descriptions:		Timer/Counter 1 interrupt handler
+**
+** parameters:			None
+** Returned value:		None
+**
+******************************************************************************/
+void TIMER2_IRQHandler (void)
+{
+  LPC_TIM2->IR = 1;			/* clear interrupt flag */
+  return;
+}
+
+
+/******************************************************************************
+** Function name:		Timer2_IRQHandler
+**
+** Descriptions:		Timer/Counter 1 interrupt handler
+**
+** parameters:			None
+** Returned value:		None
+**
+******************************************************************************/
+void TIMER3_IRQHandler (void)
+{
+  LPC_TIM3->IR = 1;			/* clear interrupt flag */
   return;
 }
 
 /******************************************************************************
 **                            End Of File
 ******************************************************************************/
+
+/*
+void TIMER0_IRQHandler (void)
+{
+	if(LPC_TIM0->IR & 1) // MR0
+	{ 
+		// your code
+		LPC_TIM0->IR = 1;			//clear interrupt flag
+	}
+	else if(LPC_TIM0->IR & 2){ // MR1
+		// your code	
+		LPC_TIM0->IR = 2;			// clear interrupt flag 
+	}
+	else if(LPC_TIM0->IR & 4){ // MR2
+		// your code	
+		LPC_TIM0->IR = 4;			// clear interrupt flag 
+	}
+	else if(LPC_TIM0->IR & 8){ // MR3
+		// your code	
+		LPC_TIM0->IR = 8;			// clear interrupt flag 
+	}
+  return;
+}*/
