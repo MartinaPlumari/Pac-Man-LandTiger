@@ -1,33 +1,17 @@
 #include "game.h"
 #include "../GLCD/GLCD.h"
-
-#define N 13
+#include "animationLib.h"
 
 typedef struct{
 	uint16_t posX;
 	uint16_t posY;
 	uint8_t speed;
 	uint8_t dir;
-}state_t;
+	uint8_t anim_frame;
+}entity_state_t;
 
-state_t pacman;
+volatile entity_state_t pacman;
 
-//farne una versione in cui si renderizza la linea intera
-    int circle[N][N] = {
-        {0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0},
-        {0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0},
-        {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-        {0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0},
-        {0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0},
-        {0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0}
-    };
 
 void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
 	
@@ -35,6 +19,7 @@ void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
 		pacman.posY = posY;
 		pacman.speed = speed;
 		pacman.dir = G_LEFT;
+	  pacman.anim_frame = 0;
 	
 		pacman_display(pacman.posX, pacman.posY);
 	
@@ -49,7 +34,14 @@ void game_update(){
 	
 	//aggiungere caso per muro -> non serve rirenderizzare pacman
 	
+	//render pacman
 	pacman_clear(pacman.posX, pacman.posY);
+	
+	if(pacman.posX<=0)
+		pacman.posX = MAX_X;
+	if(pacman.posX>MAX_X)
+		pacman.posX = 0;
+	
 	switch(pacman.dir){
 		case G_UP:
 		  pacman.posY -= pacman.speed;
@@ -66,6 +58,7 @@ void game_update(){
 		default:
 			break;
 	}
+		
 	pacman_display(pacman.posX, pacman.posY);
 	
 }
@@ -80,20 +73,50 @@ void pacman_display(uint16_t Xpos, uint16_t Ypos){
 	
 	X = Xpos - N/2;
 	Y = Ypos - N/2;
+
 	
-	//falso perchè pacman si teletrasporta -> usare una versione modificata di questo codice per fare il teletrasporto
-	/*if(X<0 || Y<0 || X+N>MAX_X || Y+N>MAX_Y){
-		//valutare se rirenderizzare nella posizione precedente -> sarebbe meglio NON cancellare quello di prima
-		return;
-	}*/
-	
-	for(i=0; i<N; i++){
-		for(j=0;j<N;j++){
-			if(circle[i][j]){
-				LCD_SetPoint(X+i, Y+j, Yellow);
+	switch(pacman.dir){
+		case(G_DOWN):
+			for(i=0; i<N; i++){
+				for(j=0;j<N;j++){
+					if(eat_anim[pacman.anim_frame][j][i]){
+						LCD_SetPoint(X+j, Y+i, Yellow);
+					}
+				}
 			}
-		}
+			break;
+		case(G_UP):
+			for(i=0; i<N; i++){
+				for(j=0;j<N;j++){
+					if(eat_anim[pacman.anim_frame][j][N-i-1]){
+						LCD_SetPoint(X+j, Y+i, Yellow);
+					}
+				}
+			}
+			break;
+		case(G_LEFT):
+			for(i=0; i<N; i++){
+				for(j=0;j<N;j++){
+					if(eat_anim[pacman.anim_frame][i][N-j-1]){
+						LCD_SetPoint(X+j, Y+i, Yellow);
+					}
+				}
+			}
+			break;
+		case(G_RIGHT):
+			for(i=0; i<N; i++){
+				for(j=0;j<N;j++){
+					if(eat_anim[pacman.anim_frame][i][j]){
+						LCD_SetPoint(X+j, Y+i, Yellow);
+					}
+				}
+			}
+			break;
 	}
+	
+	pacman.anim_frame ++;
+	if(pacman.anim_frame >= 4)
+		pacman.anim_frame = 0;
 }
 
 void pacman_clear(uint16_t Xpos, uint16_t Ypos){
@@ -105,9 +128,34 @@ void pacman_clear(uint16_t Xpos, uint16_t Ypos){
 	
 	for(i=0; i<N; i++){
 		for(j=0;j<N;j++){
-			if(circle[i][j]){
-				LCD_SetPoint(X+i, Y+j, Blue);
-			}
+			LCD_SetPoint(X+j, Y+i, Blue);
 		}
 	}
+	
+/*		switch(pacman.dir){
+		case(G_DOWN):
+			for(i=0; i<N; i++){
+				for(j=0;j<N;j++){
+					if(eat_anim[pacman.anim_frame][i][j]){
+						LCD_SetPoint(X+j, Y+i, Blue);
+					}
+				}
+			}
+			break;
+		case(G_UP):
+			for(i=0; i<N; i++){
+				for(j=0;j<N;j++){
+					if(eat_anim[pacman.anim_frame][i][N-j]){
+						LCD_SetPoint(X+j, Y+i, Blue);
+					}
+				}
+			}
+			break;
+		case(G_LEFT):
+			break;
+		case(G_RIGHT):
+			break;
+	}*/
+	
+	
 }

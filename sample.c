@@ -32,7 +32,7 @@ extern uint8_t ScaleFlag; // <- ScaleFlag needs to visible in order for the emul
 int main (void) {
   	
 	SystemInit();  												/* System Initialization (i.e., PLL)  */
-  LCD_Initialization();
+  LCD_Initialization();									/*LCD Screen Initialization           */
   BUTTON_init();												/* BUTTON Initialization              */
 	joystick_init();											/* Joystick Initialization            */
 	

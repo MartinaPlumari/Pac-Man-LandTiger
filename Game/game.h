@@ -3,11 +3,17 @@
 
 #include "LPC17xx.h"
 
-enum Directions{
+enum directions{
 	G_UP,
 	G_DOWN,
 	G_LEFT,
 	G_RIGHT
+};
+
+//valutare se metterlo nel .c
+enum gameState{
+	PAUSE,
+	GAME_OVER
 };
 
 void game_init();
