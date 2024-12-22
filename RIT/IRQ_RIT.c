@@ -36,76 +36,84 @@ void RIT_IRQHandler (void)
 	
 	//riscrivere codice -> fare file di libreria più carini
 	
-	/*joystick behavior*/
-	if((LPC_GPIO1->FIOPIN & (1<<29)) == 0){	
-		/* Joystick UP pressed */
-		J_up++;
+	if(game_state == PLAY){
+		/*joystick behavior*/
+		if((LPC_GPIO1->FIOPIN & (1<<29)) == 0){	
+			/* Joystick UP pressed */
+			J_up++;
+			if(J_up == 1)
+				pacman_change_dir(G_UP);
+			
+		}else{
+			J_up = 0;
+		}
 		
-		if(J_up == 1)
-			pacman_change_dir(G_UP);
-		
-	}else{
-		J_up = 0;
-	}
-	
-	if((LPC_GPIO1->FIOPIN & (1<<28)) == 0){
-		/* Joystick RIGHT pressed */
-		J_right++;
+		if((LPC_GPIO1->FIOPIN & (1<<28)) == 0){
+			/* Joystick RIGHT pressed */
+			J_right++;
+			if(J_right == 1)
+				pacman_change_dir(G_RIGHT);
 
-		if(J_right == 1)
-			pacman_change_dir(G_RIGHT);
-
-	}else{
-		J_right = 0;
-	}
-	
-	if((LPC_GPIO1->FIOPIN & (1<<27)) == 0){
-		/* Joystick LEFT pressed */
-		J_left++;
+		}else{
+			J_right = 0;
+		}
 		
-		if(J_left == 1)
-				pacman_change_dir(G_LEFT);
+		if((LPC_GPIO1->FIOPIN & (1<<27)) == 0){
+			/* Joystick LEFT pressed */
+			J_left++;
+			if(J_left == 1)
+					pacman_change_dir(G_LEFT);
+			
+		}else{
+			J_left = 0;
+		}
 		
-	}else{
-		J_left = 0;
-	}
-	
-	if((LPC_GPIO1->FIOPIN & (1<<26)) == 0){
-		/* Joystick DOWN pressed */
-		J_down++;
-
-		if(J_down == 1)
-			pacman_change_dir(G_DOWN);
+		if((LPC_GPIO1->FIOPIN & (1<<26)) == 0){
+			/* Joystick DOWN pressed */
+			J_down++;
+			if(J_down == 1)
+				pacman_change_dir(G_DOWN);
+			
+		}else{
+			J_down = 0;
+		}
 		
-	}else{
-		J_down = 0;
+		game_update();
 	}
-	
-	/* button management */
-	if(B_down>=1){ 
-		if((LPC_GPIO2->FIOPIN & (1<<10)) == 0){	/* INT0 pressed */
-			switch(B_down){				
-				case 2:				/* pay attention here: please see slides to understand value 2 */
-				/*INT0 behavior*/
-				
-					break;
-				default:
-					break;
+		
+		/* button management */
+		if(B_down>=1){ 
+			if((LPC_GPIO2->FIOPIN & (1<<10)) == 0){	/* INT0 pressed */
+				switch(B_down){				
+					case 2:				/* pay attention here: please see slides to understand value 2 */
+					/*INT0 behavior*/
+						if(game_state == PLAY){
+							
+							game_pause();
+							
+						}
+						else if(game_state == PAUSE){
+							
+							game_resume();
+							
+						}
+						break;
+					default:
+						break;
+				}
+				B_down++;
 			}
-			B_down++;
-		}
-		else {	/* button released */
-			B_down=0;			
-			NVIC_EnableIRQ(EINT0_IRQn);							 /* enable Button interrupts			*/
-			LPC_PINCON->PINSEL4    |= (1 << 22);     /* External interrupt 0 pin selection */
-		}
+			else {	/* button released */
+				B_down=0;			
+				NVIC_EnableIRQ(EINT0_IRQn);							 /* enable Button interrupts			*/
+				LPC_PINCON->PINSEL4    |= (1 << 20);     /* External interrupt 0 pin selection */
+			}
 	}
 /*	else{
 			if(down==1)
 				down++;
 	} */
 	
-	game_update();
 	
   LPC_RIT->RICTRL |= 0x1;	/* clear interrupt flag */
 	
