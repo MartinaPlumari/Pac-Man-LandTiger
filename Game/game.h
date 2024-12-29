@@ -22,6 +22,7 @@ typedef struct{
 	uint16_t counter;
 	uint8_t curr_state;
 	uint16_t score;
+	uint8_t lives;
 }game_state_t;
 
 extern volatile game_state_t game_state;
@@ -32,6 +33,8 @@ void game_render();
 void game_pause();
 void game_resume();
 void game_over();
+void game_gain_life();
+void game_lose_life();
 
 void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed);
 void pacman_display(uint16_t Xpos, uint16_t Ypos);
@@ -43,5 +46,6 @@ void score_update(uint8_t PowerPill);
 
 void print_number(uint16_t value, uint16_t posX, uint16_t posY, uint16_t textColor, uint16_t bgColor);
 void print_circle(uint8_t radius, uint16_t posX, uint16_t posY, uint16_t color);
+
 
 #endif
