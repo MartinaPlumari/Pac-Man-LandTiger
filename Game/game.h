@@ -21,6 +21,7 @@ enum gameState{
 typedef struct{
 	uint16_t counter;
 	uint8_t curr_state;
+	uint16_t score;
 }game_state_t;
 
 extern volatile game_state_t game_state;
@@ -38,5 +39,9 @@ void pacman_clear(uint16_t Xpos, uint16_t Ypos);
 void pacman_change_dir(uint8_t direction);
 
 void counter_update();
+void score_update(uint8_t PowerPill);
+
+void print_number(uint16_t value, uint16_t posX, uint16_t posY, uint16_t textColor, uint16_t bgColor);
+void print_circle(uint8_t radius, uint16_t posX, uint16_t posY, uint16_t color);
 
 #endif

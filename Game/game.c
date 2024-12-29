@@ -8,7 +8,7 @@
 #define START_X 100
 #define START_Y 100
 #define SPEED 5
-#define MAX_TIME 3
+#define MAX_TIME 60
 
 /*ENTITY TYPE*/
 /* - posX and posY: current position												*/
@@ -40,24 +40,21 @@ void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
 }
 
 void game_init(){
-	  char space[2] = "  ";
-		char counter_value[6];
 
 		LCD_Clear(Blue);
 		pacman_init(START_X, START_Y, SPEED);
 	  
 		/*print counter*/
 		game_state.counter = MAX_TIME;
-		if(game_state.counter >= 10)
-				sprintf(counter_value, "%s%s%d%s", space, " ", game_state.counter, space);
-		else
-					sprintf(counter_value, "%s%s%d%d%s", space, " ", 0, game_state.counter, space);
+	  GUI_Text(0,0,(uint8_t *) "  TIME  ", White, Blue);
+		print_number(game_state.counter, 0, 12, White, Blue);
 
-		GUI_Text(0,0,(uint8_t *) "  TIME  ", White, Blue);
-		GUI_Text(0, 12, (uint8_t *) counter_value, White, Blue);
+		/*print score*/
+		game_state.score = 0;
+	  GUI_Text(MAX_X-80, 0, (uint8_t *) "  SCORE  ", White, Blue); 
+	  print_number(game_state.score, MAX_X-80, 12, White, Blue);
 		
-		
-	  game_state.curr_state = PLAY;
+	  game_pause();
 }
 
 void game_update(){
@@ -100,8 +97,8 @@ void game_pause(){
 	game_state.curr_state = PAUSE;
 	
 	//rendere questo più carino e generalizzare in una funzione
-	GUI_Text(MAX_X/2-40, MAX_Y/2, (uint8_t *) "         ", Blue, Blue);
-	GUI_Text(MAX_X/2-40, MAX_Y/2, (uint8_t *) "  PAUSE  ", Black, White);
+	GUI_Text(MAX_X/2-35, MAX_Y/2, (uint8_t *) "         ", Blue, Blue);
+	GUI_Text(MAX_X/2-35, MAX_Y/2, (uint8_t *) "  PAUSE  ", Black, White);
 	
 	//bloccare timer
 	disable_timer(0);
@@ -202,19 +199,48 @@ void pacman_clear(uint16_t Xpos, uint16_t Ypos){
 }
 
 void counter_update(){
-				char space[2] = "  ";
-				char counter_value[6];
-	     
+	    
 				game_state.counter --;
 	
-				if(game_state.counter >= 10)
-					sprintf(counter_value, "%s%s%d%s", space, " ", game_state.counter, space);
-				else
-					sprintf(counter_value, "%s%s%d%d%s", space, " ", 0, game_state.counter, space);
-				
-				GUI_Text(0, 12, (uint8_t *) "      ", Blue, Blue);
-				GUI_Text(0, 12, (uint8_t *) counter_value, White, Blue);
-				
+				print_number(game_state.counter, 0, 12, White, Blue);
+					
 				if(game_state.counter == 0)
 					game_over();
+}
+
+void score_update(uint8_t PowerPill){
+	
+			 if(PowerPill == 1)
+					game_state.counter += 50;
+			 game_state.score += 10;
+	
+			 print_number(game_state.counter, MAX_X-80, 12, White, Blue);
+}
+
+void print_number(uint16_t value, uint16_t posX, uint16_t posY, uint16_t textColor, uint16_t bgColor){
+				char space[2] = "  ";
+				char str_value[6] = "     ";
+	
+				sprintf(str_value, "%s%d", "  ", value);
+
+				GUI_Text(posX, posY, (uint8_t *) "     ", bgColor, bgColor);
+				GUI_Text(posX, posY, (uint8_t *) str_value, textColor, bgColor);
+}
+
+void print_circle(uint8_t radius, uint16_t posX, uint16_t posY, uint16_t color){
+				int i, j;
+				
+				//y
+				for(i=0; i<radius; i++){
+					//x
+					for(j=0;j<radius; j++){
+						//finds the first pixel of the circle in the line and prints it. Using simmetry we can print two lines.
+						if(((radius-j)*(radius-j) + (radius-i)*(radius-i)) <= radius*radius+1){
+								LCD_DrawLine(posX-radius+j+1, posY-radius+i+1, posX+radius-j-1, posY-radius+i+1, color);
+								LCD_DrawLine(posX-radius+j+1, posY+radius-i-1, posX+radius-j-1, posY+radius-i-1, color);
+								continue;
+						}
+					}
+				}
+	
 }
