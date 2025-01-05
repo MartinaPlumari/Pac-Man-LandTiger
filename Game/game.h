@@ -47,5 +47,7 @@ void score_update(uint8_t PowerPill);
 void print_number(uint16_t value, uint16_t posX, uint16_t posY, uint16_t textColor, uint16_t bgColor);
 void print_circle(uint8_t radius, uint16_t posX, uint16_t posY, uint16_t color);
 
+void map_init();
+
 
 #endif

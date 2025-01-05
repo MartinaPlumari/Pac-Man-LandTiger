@@ -39,7 +39,7 @@ int main (void) {
 	
 	game_init();
 	
-	enable_timer(0);
+	//enable_timer(0);
 	
 	init_RIT(0x004C4B40);									/* RIT Initialization 50 msec       	*/
 	enable_RIT();													/* RIT enabled			*/
