@@ -34,6 +34,7 @@ void game_render();
 void game_pause();
 void game_resume();
 void game_over();
+void game_victory();
 void game_gain_life();
 void game_lose_life();
 

@@ -85,21 +85,28 @@ void game_init(){
 }
 
 void game_update(){
-	uint8_t c, r;
-	uint16_t i;
+		static uint8_t c, r;
+	  uint16_t i;
 	
 		pixels2map(pacman.posX, pacman.posY, &r, &c);
 		
-		//aggiungere caso per muro -> non serve rirenderizzare pacman
-		
+		//check pillola mangiata
+		//fare questo check solo quando ci si trova al centro di una cella - > !capire come fare!
+		if(map[r][c] == 1){
+			i = pill_getIndex(r,c);
+			map[r][c] = 3;
+			pills[i].isEaten = 1;
+			game_state.eaten_pills++;
+			score_update(0);
+			if(game_state.eaten_pills == PILL_N){
+				game_victory();
+				return;
+			}
+			
+		}
+	
 		/*PACMAN RENDERING*/
 		pacman_clear(pacman.posX, pacman.posY);
-		
-		//check if we have to teleport (only horizontal since we don't have it vertically)
-		if(pacman.posX<=0)
-			pacman.posX = MAX_X;
-		if(pacman.posX>MAX_X)
-			pacman.posX = 0;
 		
 		//position update
 		switch(pacman.dir){
@@ -112,26 +119,22 @@ void game_update(){
 						pacman.posY += pacman.speed;
 					break;
 				case G_LEFT:
-					if(map[r][c-1]!=0)
+					if(c-1<0 || map[r][c-1]!=0)
 						pacman.posX -= pacman.speed;
 					break;
 				case G_RIGHT:
-					if(map[r][c+1]!=0)
+					if(c+1>MAP_C ||map[r][c+1]!=0)
 						pacman.posX += pacman.speed;
 					break;
 				default:
 					break;
 		}
 		
-		//check pillola mangiata
-		//fare questo check solo quando ci si trova al centro di una cella - > !capire come fare!
-		if(map[r][c] == 1){
-			i = pill_getIndex(r,c);
-			map[r][c] = 0;
-			pills[i].isEaten = 1;
-			game_state.eaten_pills++;
-			score_update(0);
-		}
+		//check if we have to teleport (only horizontal since we don't have it vertically)
+		if(pacman.posX-x_margin<=0){
+			pacman.posX = MAX_X-x_margin;
+		}else if(pacman.posX+x_margin>MAX_X)
+			pacman.posX = x_margin;
 
 	pacman_display(pacman.posX, pacman.posY);
 
@@ -182,7 +185,18 @@ void game_over(){
 	LCD_Clear(Red);
 	
 	//rendere questo più carino e generalizzare in una funzione
-	GUI_Text(MAX_X/2-55, MAX_Y/2, (uint8_t *) "  GAME OVER  ", Black, White);
+	GUI_Text(MAX_X/2-55, MAX_Y/2, (uint8_t *) "  GAME OVER!  ", Black, White);
+}
+
+void game_victory(){
+	
+	game_state.curr_state = VICTORY;
+	disable_timer(0);
+	
+	LCD_Clear(Green);
+	
+	//rendere questo più carino e generalizzare in una funzione
+	GUI_Text(MAX_X/2-45, MAX_Y/2, (uint8_t *) "  VICTORY!  ", Black, White);
 }
 
 void pacman_change_dir(uint8_t direction){
@@ -316,8 +330,10 @@ void map2pixels (uint8_t r, uint8_t c, uint16_t *posX, uint16_t *posY){
 
 /*returns the center of the map tile in screen pixel position*/
 void pixels2map (uint16_t posX, uint16_t posY, uint8_t *r, uint8_t *c){
-	*c = (posX - x_margin - MAP_N/2)/MAP_N;
-	*r = (posY - y_margin - MAP_N/2)/MAP_N;
+	if((posX-x_margin-MAP_N/2) % MAP_N == 0)
+		*c = (posX - x_margin - MAP_N/2)/MAP_N;
+	if((posY-y_margin-MAP_N/2) % MAP_N == 0)
+		*r = (posY - y_margin - MAP_N/2)/MAP_N;
 }
 
 void print_tile(uint16_t r, uint16_t c, uint16_t x_margin, uint16_t y_margin){
