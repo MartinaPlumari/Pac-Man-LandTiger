@@ -10,8 +10,9 @@
 #define SPEED 5
 #define MAX_TIME 60
 
-#define PILL_DIM 3
+#define PILL_DIM 2
 #define PPILL_DIM 5
+#define PILL_N 240
 
 /*ENTITY TYPE*/
 /* - posX and posY: current position												*/
@@ -26,17 +27,24 @@ typedef struct{
 	uint8_t anim_frame;
 }entity_state_t;
 
+//eliminare
 typedef struct{
-	uint16_t posX;
-	uint16_t posY;
+	uint16_t r;
+	uint16_t c;
 	uint8_t PowerPill;
 	uint8_t isEaten;
 }pill_t;
 
 volatile entity_state_t pacman;
 volatile game_state_t game_state;
+
+const x_margin = (MAX_X-MAP_C*MAP_N)/2;
+const y_margin = (MAX_Y-MAP_R*MAP_N)/2;
+
+//eliminare
 //valutare se mettere le pill dentro una struttura mappa. Di sicuro vanno inizializzate con la mappa
-volatile pill_t pills[240];
+volatile pill_t pills[PILL_N];
+volatile n_pills = 0;
 
 void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
 	
@@ -68,56 +76,65 @@ void game_init(){
 		/*set and print lives*/
 		game_state.lives = 0;
 		game_gain_life();
-	  
-	
-	//provvisorio: sostituire con init mappa
-		/*pills[0].posX = 200;
-		pills[0].posY = 200;
-	  pills[0].PowerPill = 0;
-		pills[0].isEaten = 0;
-	  print_circle(PILL_DIM, pills[0].posX, pills[0].posY, White); */
 		
+	  /*initialize map*/
 		map_init();
+	  game_state.eaten_pills = 0;
 		
 	  game_pause();
 }
 
 void game_update(){
+	uint8_t c, r;
+	uint16_t i;
 	
-	//aggiungere caso per muro -> non serve rirenderizzare pacman
-	
-	/*PACMAN RENDERING*/
-	pacman_clear(pacman.posX, pacman.posY);
-	
-	//check if we have to teleport (only horizontal since we don't have it vertically)
-	if(pacman.posX<=0)
-		pacman.posX = MAX_X;
-	if(pacman.posX>MAX_X)
-		pacman.posX = 0;
-	
-	//position update
-	switch(pacman.dir){
-		case G_UP:
-		  pacman.posY -= pacman.speed;
-			break;
-		case G_DOWN:
-		  pacman.posY += pacman.speed;
-			break;
-		case G_LEFT:
-			pacman.posX -= pacman.speed;
-			break;
-		case G_RIGHT:
-			pacman.posX += pacman.speed;
-			break;
-		default:
-			break;
-	}
+		pixels2map(pacman.posX, pacman.posY, &r, &c);
 		
+		//aggiungere caso per muro -> non serve rirenderizzare pacman
+		
+		/*PACMAN RENDERING*/
+		pacman_clear(pacman.posX, pacman.posY);
+		
+		//check if we have to teleport (only horizontal since we don't have it vertically)
+		if(pacman.posX<=0)
+			pacman.posX = MAX_X;
+		if(pacman.posX>MAX_X)
+			pacman.posX = 0;
+		
+		//position update
+		switch(pacman.dir){
+				case G_UP:
+					if(map[r-1][c]!=0)
+						pacman.posY -= pacman.speed;
+					break;
+				case G_DOWN:
+					if(map[r+1][c]!=0)
+						pacman.posY += pacman.speed;
+					break;
+				case G_LEFT:
+					if(map[r][c-1]!=0)
+						pacman.posX -= pacman.speed;
+					break;
+				case G_RIGHT:
+					if(map[r][c+1]!=0)
+						pacman.posX += pacman.speed;
+					break;
+				default:
+					break;
+		}
+		
+		//check pillola mangiata
+		//fare questo check solo quando ci si trova al centro di una cella - > !capire come fare!
+		if(map[r][c] == 1){
+			i = pill_getIndex(r,c);
+			map[r][c] = 0;
+			pills[i].isEaten = 1;
+			game_state.eaten_pills++;
+			score_update(0);
+		}
+
 	pacman_display(pacman.posX, pacman.posY);
-	
-	//fare questo check solo per intervalli più grossi di un pixel !!!
-	if(pacman.posX == pills[0].posX && pacman.posY == pills[0].posY && pills[0].isEaten == 0)
-			score_update(pills[0].PowerPill);
+
 	
 }
 
@@ -134,10 +151,24 @@ void game_pause(){
 }
 
 void game_resume(){
+	int c, r, i, j;
+	
+	c = (MAX_X/2-35 - x_margin)/MAP_N;
+	r = (MAX_Y/2 - y_margin)/MAP_N;
+	
+	//SPOSTARE IN UNA FUNZIONE che prende x, y, margin_x e margin_y
+	GUI_Text(MAX_X/2-35, MAX_Y/2, (uint8_t *) "         ", Black, Black);
+	
+	for(i=r-1; i<r+2; i++){
+		for(j=c; j<c+9; j++){
+			if(map[i][j] == 0)
+				print_tile(i,j,x_margin, y_margin);
+			else if(map[i][j] == 1)
+				print_circle(PILL_DIM, x_margin+j*MAP_N+(MAP_N/2), y_margin +i*MAP_N+(MAP_N/2), White);
+		}
+	}
 	
 	game_state.curr_state = PLAY;
-	
-	GUI_Text(MAX_X/2-35, MAX_Y/2, (uint8_t *) "         ", Black, Black);
 	
 	//resume timer
 	enable_timer(0);
@@ -165,7 +196,6 @@ void pacman_display(uint16_t Xpos, uint16_t Ypos){
 	X = Xpos - N/2;
 	Y = Ypos - N/2;
 
-	
 	switch(pacman.dir){
 		case(G_DOWN):
 			for(i=0; i<N; i++){
@@ -278,12 +308,26 @@ void print_circle(uint8_t radius, uint16_t posX, uint16_t posY, uint16_t color){
 	
 }
 
+/*returns the screen pixel position of the map tile*/
+void map2pixels (uint8_t r, uint8_t c, uint16_t *posX, uint16_t *posY){
+	*posX =  x_margin+c*MAP_N+(MAP_N/2);
+	*posY =  y_margin+r*MAP_N+(MAP_N/2);
+}
+
+/*returns the center of the map tile in screen pixel position*/
+void pixels2map (uint16_t posX, uint16_t posY, uint8_t *r, uint8_t *c){
+	*c = (posX - x_margin - MAP_N/2)/MAP_N;
+	*r = (posY - y_margin - MAP_N/2)/MAP_N;
+}
 
 void print_tile(uint16_t r, uint16_t c, uint16_t x_margin, uint16_t y_margin){
 	int i;
+	uint16_t x, y;
+	
+	map2pixels(r,c,&x,&y);
 	
 	for(i=0;i<MAP_N;i++){
-		LCD_DrawLine(x_margin+c*MAP_N, y_margin+r*MAP_N+i, x_margin+c*MAP_N+MAP_N, y_margin+r*MAP_N+i, Blue);
+		LCD_DrawLine(x-MAP_N/2, y-MAP_N/2+i, x+MAP_N/2, y-MAP_N/2+i, Blue);
 	}
 }
 
@@ -321,10 +365,35 @@ void game_lose_life(){
 		game_state.lives--;
 }
 
+uint16_t pill_getIndex(uint8_t r, uint8_t c){
+	uint16_t i;
+	
+	for(i=0;i<PILL_N;i++){
+		if(pills[i].r == r && pills[i].c == c){
+			break;
+		}
+	}
+	
+	return i;
+}
+
+void pill_create(uint8_t r, uint8_t c){
+	uint16_t x, y;
+	
+	map2pixels(r, c, &x, &y);
+
+	pills[n_pills].c = c;
+	pills[n_pills].r = r;
+	pills[n_pills].isEaten = 0;
+	pills[n_pills].PowerPill = 0;
+	n_pills++;
+	
+	print_circle(PILL_DIM, x, y, White);
+	
+}
+
 void map_init(){
 	int i, j;
-	int x_margin = (MAX_X-MAP_C*MAP_N)/2;
-	int y_margin = (MAX_Y-MAP_R*MAP_N)/2;
 	
 	for(i=0; i<MAP_R; i++){
 		for(j=0; j<MAP_C; j++){
@@ -333,7 +402,8 @@ void map_init(){
 				print_tile(i, j, x_margin, y_margin);
 			}else if(map[i][j] == 1){
 				//print pill
-				print_circle(2, x_margin+j*MAP_N+(MAP_N/2), y_margin +i*MAP_N+(MAP_N/2), White);
+				//print_circle(PILL_DIM, x_margin+j*MAP_N+(MAP_N/2), y_margin +i*MAP_N+(MAP_N/2), White);
+				pill_create(i,j);
 			}else if(map[i][j] == 2){
 				//print pacman
 				pacman_init(x_margin+j*MAP_N+(MAP_N/2), y_margin+i*MAP_N+(MAP_N/2), SPEED);
