@@ -28,8 +28,6 @@ typedef struct{
 
 extern volatile game_state_t game_state;
 
-uint16_t get_rand_in_range(int min, int max);
-
 void game_init();
 void game_update();
 void game_render();
@@ -48,18 +46,13 @@ void pacman_change_dir(uint8_t direction);
 void counter_update();
 void score_update(uint8_t PowerPill);
 
+uint16_t pill_getIndex(uint8_t r, uint8_t c);
+void pill_create(uint8_t r, uint8_t c);
+void ppill_generate();
+void ppills_generate_t();
+
 void map2pixels (uint8_t r, uint8_t c, uint16_t *posX, uint16_t *posY);
 void pixels2map (uint16_t posX, uint16_t posY, uint8_t *r, uint8_t *c);
-
-void print_number(uint16_t value, uint16_t posX, uint16_t posY, uint16_t textColor, uint16_t bgColor);
-void print_circle(uint8_t radius, uint16_t posX, uint16_t posY, uint16_t color);
-void print_tile(uint16_t r, uint16_t c, uint16_t x_margin, uint16_t y_margin);
-
-uint16_t pill_getIndex(uint8_t r, uint8_t c);
-void ppills_generate_t();
-void ppill_generate();
-
 void map_init();
-
 
 #endif

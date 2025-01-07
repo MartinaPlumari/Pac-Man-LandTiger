@@ -65,9 +65,9 @@
 #define Grey           0xF7DE
 #define Blue           0x001F
 #define Blue2          0x051F
-#define Red            0xF800
+#define Red            0xC9E8	 //0xF800
 #define Magenta        0xF81F
-#define Green          0x07E0
+#define Green          0x4E6C  //0x07E0
 #define Cyan           0x7FFF
 #define Yellow         0xFFE0
 #define Pink           0xF5D6

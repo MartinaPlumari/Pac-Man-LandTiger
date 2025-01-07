@@ -8,7 +8,7 @@
 #define START_X 100
 #define START_Y 100
 #define SPEED 5
-#define MAX_TIME 53
+#define MAX_TIME 60
 
 #define PILL_DIM 2
 #define PPILL_DIM 4
@@ -30,7 +30,12 @@ typedef struct{
 	uint8_t anim_frame;
 }entity_state_t;
 
-/* PILL TYPE */
+/* PILL TYPE																								 */
+/*-----------------------------------------------------------*/
+/* - r, c: pill coordinates in the game map matrix           */
+/* - PowerPill: bool that indicates if it is a powerpill     */
+/* - isEaten: bool that indicates if the pill has been eaten */
+
 typedef struct{
 	uint16_t r;
 	uint16_t c;
@@ -38,7 +43,13 @@ typedef struct{
 	uint8_t isEaten;
 }pill_t;
 
-/* PILLS WRAPPER STRUCTURE */
+/* PILLS WRAPPER STRUCTURE                                   */
+/*-----------------------------------------------------------*/
+/* - v_pills: vector containing all the pills                */
+/* - n_pills: pills index (used for filling the vector)      */
+/* - powerpills_t: stores spawn times for the power pills    */
+/* - pp_i: power pills current index													*/
+
 typedef struct{
 	pill_t v_pills[PILL_N];
 	uint8_t n_pills;
@@ -51,32 +62,10 @@ const y_margin = (MAX_Y-MAP_R*MAP_N)/2;
 
 volatile entity_state_t pacman;
 volatile game_state_t game_state;
-
 volatile pills_t pills;
 
-uint16_t get_rand_in_range(int min, int max){
-	
-	int seed;
-	uint16_t rand_n = 0;
-	
-	seed = (LPC_TIM1->TC)*65;
-	seed &= 0xFFF;
-	rand_n = (seed%(max-min-1))+min;
-	
-	return rand_n;
-}
+uint16_t get_rand_in_range(int min, int max);
 
-void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
-	
-		pacman.posX = posX;
-		pacman.posY = posY;
-		pacman.speed = speed;
-		pacman.dir = G_LEFT;
-	  pacman.anim_frame = 0;
-	
-		pacman_display(pacman.posX, pacman.posY);
-	
-}
 
 void game_init(){
 	  int i;
@@ -116,8 +105,7 @@ void game_update(){
 	
 		pixels2map(pacman.posX, pacman.posY, &r, &c);
 		
-		//check pillola mangiata
-		//fare questo check solo quando ci si trova al centro di una cella - > !capire come fare!
+		//check for eaten pill
 		if(map[r][c] == 1){
 			i = pill_getIndex(r,c);
 			map[r][c] = 3;
@@ -131,7 +119,7 @@ void game_update(){
 			
 		}
 	
-		/*PACMAN RENDERING*/
+		/* PACMAN RENDERING */
 		pacman_clear(pacman.posX, pacman.posY);
 		
 		//position update
@@ -156,7 +144,7 @@ void game_update(){
 					break;
 		}
 		
-		//check if we have to teleport (only horizontal since we don't have it vertically)
+		/*check if we have to teleport (only horizontal since we don't have it vertically)*/
 		if(pacman.posX-x_margin<=0){
 			pacman.posX = MAX_X-x_margin-MAP_N/2;
 			c = MAP_C-1;
@@ -179,11 +167,10 @@ void game_pause(){
 	
 	game_state.curr_state = PAUSE;
 	
-	//rendere questo più carino e generalizzare in una funzione
-	GUI_Text(MAX_X/2-35, MAX_Y/2, (uint8_t *) "         ", Black, Black);
-	GUI_Text(MAX_X/2-35, MAX_Y/2, (uint8_t *) "  PAUSE  ", Black, White);
+	GUI_Text(MAX_X/2-28, MAX_Y/2, (uint8_t *) "       ", Black, Black);
+	GUI_Text(MAX_X/2-28, MAX_Y/2, (uint8_t *) " PAUSE ", Black, Blue);
 	
-	//block timer
+	//suspend countdown
 	disable_timer(0);
 }
 
@@ -193,9 +180,10 @@ void game_resume(){
 	c = (MAX_X/2-35 - x_margin)/MAP_N;
 	r = (MAX_Y/2 - y_margin)/MAP_N;
 	
-	//SPOSTARE IN UNA FUNZIONE che prende x, y, margin_x e margin_y
+	//delete "pause" 
 	GUI_Text(MAX_X/2-35, MAX_Y/2, (uint8_t *) "         ", Black, Black);
 	
+	//render underlying map area
 	for(i=r-1; i<r+2; i++){
 		for(j=c-1; j<c+9; j++){
 			if(map[i][j] == 0)
@@ -218,8 +206,7 @@ void game_over(){
 	
 	LCD_Clear(Red);
 	
-	//rendere questo più carino e generalizzare in una funzione
-	GUI_Text(MAX_X/2-55, MAX_Y/2, (uint8_t *) "  GAME OVER!  ", Black, White);
+	GUI_Text(MAX_X/2-55, MAX_Y/2, (uint8_t *) "  GAME OVER!  ", Black, Red);
 }
 
 void game_victory(){
@@ -228,9 +215,56 @@ void game_victory(){
 	disable_timer(0);
 	
 	LCD_Clear(Green);
+
+	GUI_Text(MAX_X/2-45, MAX_Y/2, (uint8_t *) "  VICTORY!  ", Black, Green);
+}
+
+void game_gain_life(){
+	int i, j;
+	int X, Y;
 	
-	//rendere questo più carino e generalizzare in una funzione
-	GUI_Text(MAX_X/2-45, MAX_Y/2, (uint8_t *) "  VICTORY!  ", Black, White);
+	X = 15 + (game_state.lives)*15;
+	Y = MAX_Y - 20;
+	
+	//print life
+	for(i=0; i<M; i++){
+			for(j=0;j<M;j++){
+					if(life_sym[i][j]){
+						LCD_SetPoint(X+j, Y+i, Yellow);
+					}
+				}
+	}
+	game_state.lives++;
+}
+
+void game_lose_life(){
+	int i, j;
+	int X, Y;
+	
+	X = 15 + (game_state.lives-1)*15;
+	Y = MAX_Y - 20;
+	
+	//erase life
+	for(i=0; i<M; i++){
+			for(j=0;j<M;j++){
+					if(life_sym[i][j]){
+						LCD_SetPoint(X+j, Y+i, Black);
+					}
+				}
+	}
+		game_state.lives--;
+}
+
+void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
+	
+		pacman.posX = posX;
+		pacman.posY = posY;
+		pacman.speed = speed;
+		pacman.dir = G_LEFT;
+	  pacman.anim_frame = 0;
+	
+		pacman_display(pacman.posX, pacman.posY);
+	
 }
 
 void pacman_change_dir(uint8_t direction){
@@ -330,116 +364,6 @@ void score_update(uint8_t PowerPill){
 				 game_gain_life();
 			 }
 }
-
-void print_number(uint16_t value, uint16_t posX, uint16_t posY, uint16_t textColor, uint16_t bgColor){
-				char space[2] = "  ";
-				char str_value[6] = "     ";
-	
-				sprintf(str_value, "%s%d", "  ", value);
-
-				GUI_Text(posX, posY, (uint8_t *) "     ", bgColor, bgColor);
-				GUI_Text(posX, posY, (uint8_t *) str_value, textColor, bgColor);
-}
-
-void print_circle(uint8_t radius, uint16_t posX, uint16_t posY, uint16_t color){
-				int i, j;
-				
-				//y
-				for(i=0; i<radius; i++){
-					//x
-					for(j=0;j<radius; j++){
-						//finds the first pixel of the circle in the line and prints it. Using simmetry we can print two lines.
-						if(((radius-j)*(radius-j) + (radius-i)*(radius-i)) <= radius*radius+1){
-								LCD_DrawLine(posX-radius+j+1, posY-radius+i+1, posX+radius-j-1, posY-radius+i+1, color);
-								LCD_DrawLine(posX-radius+j+1, posY+radius-i-1, posX+radius-j-1, posY+radius-i-1, color);
-								continue;
-						}
-					}
-				}
-	
-}
-
-/*returns the screen pixel position of the map tile*/
-void map2pixels (uint8_t r, uint8_t c, uint16_t *posX, uint16_t *posY){
-	*posX =  x_margin+c*MAP_N+(MAP_N/2);
-	*posY =  y_margin+r*MAP_N+(MAP_N/2);
-}
-
-/*returns the center of the map tile in screen pixel position*/
-void pixels2map (uint16_t posX, uint16_t posY, uint8_t *r, uint8_t *c){
-	if((posX-x_margin-MAP_N/2) % MAP_N == 0)
-		*c = (posX - x_margin - MAP_N/2)/MAP_N;
-	if((posY-y_margin-MAP_N/2) % MAP_N== 0)
-		*r = (posY - y_margin - MAP_N/2)/MAP_N;
-}
-
-void print_tile(uint16_t r, uint16_t c, uint16_t x_margin, uint16_t y_margin){
-	int i;
-	uint16_t x, y;
-	
-	map2pixels(r,c,&x,&y);
-	
-	/*upper line*/
-	if(r-1<0 || map[r-1][c]!=0){
-		LCD_DrawLine(x-MAP_N/2, y-MAP_N/2, x+MAP_N/2, y-MAP_N/2, Blue);
-		LCD_DrawLine(x-MAP_N/2, y-MAP_N/2-1, x+MAP_N/2, y-MAP_N/2-1, Blue);
-	}
-	/*bottom line*/
-	if(r+1>=MAP_R || map[r+1][c]!=0){
-		LCD_DrawLine(x-MAP_N/2, y+MAP_N/2, x+MAP_N/2, y+MAP_N/2, Blue);
-		LCD_DrawLine(x-MAP_N/2, y+MAP_N/2-1, x+MAP_N/2, y+MAP_N/2-1, Blue);
-	}
-	/*left line*/
-	if(c-1<0 || map[r][c-1]!=0){
-		LCD_DrawLine(x-MAP_N/2, y-MAP_N/2, x-MAP_N/2, y+MAP_N/2, Blue);
-		LCD_DrawLine(x-MAP_N/2-1, y-MAP_N/2, x-MAP_N/2-1, y+MAP_N/2, Blue);
-	}
-	/*right line*/
-	if(c+1>=MAP_C || map[r][c+1]!=0){
-		LCD_DrawLine(x+MAP_N/2, y-MAP_N/2, x+MAP_N/2, y+MAP_N/2, Blue);
-		LCD_DrawLine(x+MAP_N/2-1, y-MAP_N/2, x+MAP_N/2-1, y+MAP_N/2, Blue);
-	}
-		
-	
-	/*for(i=0;i<MAP_N;i++){
-		LCD_DrawLine(x-MAP_N/2, y-MAP_N/2+i, x+MAP_N/2, y-MAP_N/2+i, Blue);
-	}*/
-}
-
-void game_gain_life(){
-	int i, j;
-	int X, Y;
-	
-	X = 15 + (game_state.lives)*15;
-	Y = MAX_Y - 20;
-	
-	for(i=0; i<M; i++){
-			for(j=0;j<M;j++){
-					if(life_sym[i][j]){
-						LCD_SetPoint(X+j, Y+i, Yellow);
-					}
-				}
-	}
-	game_state.lives++;
-}
-
-void game_lose_life(){
-	int i, j;
-	int X, Y;
-	
-	X = 15 + (game_state.lives-1)*15;
-	Y = MAX_Y - 20;
-	
-	for(i=0; i<M; i++){
-			for(j=0;j<M;j++){
-					if(life_sym[i][j]){
-						LCD_SetPoint(X+j, Y+i, Black);
-					}
-				}
-	}
-		game_state.lives--;
-}
-
 uint16_t pill_getIndex(uint8_t r, uint8_t c){
 	uint16_t i;
 	
@@ -496,6 +420,20 @@ void ppill_generate(){
 	
 }
 
+/*returns the screen pixel position of the map tile*/
+void map2pixels (uint8_t r, uint8_t c, uint16_t *posX, uint16_t *posY){
+	*posX =  x_margin+c*MAP_N+(MAP_N/2);
+	*posY =  y_margin+r*MAP_N+(MAP_N/2);
+}
+
+/*returns the center of the map tile in screen pixel position*/
+void pixels2map (uint16_t posX, uint16_t posY, uint8_t *r, uint8_t *c){
+	if((posX-x_margin-MAP_N/2) % MAP_N == 0)
+		*c = (posX - x_margin - MAP_N/2)/MAP_N;
+	if((posY-y_margin-MAP_N/2) % MAP_N== 0)
+		*r = (posY - y_margin - MAP_N/2)/MAP_N;
+}
+
 void map_init(){
 	int i, j;
 	
@@ -514,4 +452,16 @@ void map_init(){
 			}
 		}
 	}
+}
+
+uint16_t get_rand_in_range(int min, int max){
+	
+	int seed;
+	uint16_t rand_n = 0;
+	
+	seed = (LPC_TIM1->TC)*65;
+	seed &= 0xFFF;
+	rand_n = (seed%(max-min-1))+min;
+	
+	return rand_n;
 }

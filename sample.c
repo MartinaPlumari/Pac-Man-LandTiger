@@ -35,8 +35,8 @@ int main (void) {
   LCD_Initialization();									/* LCD Screen Initialization          */
   BUTTON_init();												/* BUTTON Initialization              */
 	joystick_init();											/* Joystick Initialization            */
-	init_timer(0,0,0,3,0x17D7840);				/* TIMER0 Initialization	-> 1s			  */
-	init_timer(1,0,0,0,0);								/* TIMER1 Inirialization       			  */
+	init_timer(0,0,0,3,0x17D7840);				/* TIMER0 Initialization							*/
+	init_timer(1,0,0,0,0);								/* TIMER1 Initialization       			  */
 	
 	enable_timer(1);
 	
@@ -44,9 +44,8 @@ int main (void) {
 	
 	
 	init_RIT(0x004C4B40);									/* RIT Initialization 50 msec       	*/
-	enable_RIT();													/* RIT enabled			*/
+	enable_RIT();													/* RIT enabled			                  */
   
-	
 	
 	LPC_SC->PCON |= 0x1;									/* power-down	mode										*/
 	LPC_SC->PCON &= ~(0x2);						
