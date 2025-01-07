@@ -28,6 +28,8 @@ typedef struct{
 
 extern volatile game_state_t game_state;
 
+uint16_t get_rand_in_range(int min, int max);
+
 void game_init();
 void game_update();
 void game_render();
@@ -54,6 +56,8 @@ void print_circle(uint8_t radius, uint16_t posX, uint16_t posY, uint16_t color);
 void print_tile(uint16_t r, uint16_t c, uint16_t x_margin, uint16_t y_margin);
 
 uint16_t pill_getIndex(uint8_t r, uint8_t c);
+void ppills_generate_t();
+void ppill_generate();
 
 void map_init();
 

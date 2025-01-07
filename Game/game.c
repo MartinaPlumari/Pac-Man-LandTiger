@@ -7,18 +7,21 @@
 
 #define START_X 100
 #define START_Y 100
-#define SPEED 2
-#define MAX_TIME 60
+#define SPEED 5
+#define MAX_TIME 53
 
 #define PILL_DIM 2
-#define PPILL_DIM 5
+#define PPILL_DIM 4
 #define PILL_N 240
+#define PPILL_N 6
 
-/*ENTITY TYPE*/
+/* GAME ENTITY TYPE                                         */
+/*----------------------------------------------------------*/
 /* - posX and posY: current position												*/
 /* - speed: current speed																		*/
 /* - dir: current direction 															  */
 /* - anim_frame: index of the next animation frame to render*/
+
 typedef struct{
 	uint16_t posX;
 	uint16_t posY;
@@ -27,7 +30,7 @@ typedef struct{
 	uint8_t anim_frame;
 }entity_state_t;
 
-//eliminare
+/* PILL TYPE */
 typedef struct{
 	uint16_t r;
 	uint16_t c;
@@ -35,16 +38,33 @@ typedef struct{
 	uint8_t isEaten;
 }pill_t;
 
-volatile entity_state_t pacman;
-volatile game_state_t game_state;
+/* PILLS WRAPPER STRUCTURE */
+typedef struct{
+	pill_t v_pills[PILL_N];
+	uint8_t n_pills;
+	uint8_t powerpills_t[PPILL_N];
+	uint8_t pp_i;
+}pills_t;
 
 const x_margin = (MAX_X-MAP_C*MAP_N)/2;
 const y_margin = (MAX_Y-MAP_R*MAP_N)/2;
 
-//eliminare
-//valutare se mettere le pill dentro una struttura mappa. Di sicuro vanno inizializzate con la mappa
-volatile pill_t pills[PILL_N];
-volatile n_pills = 0;
+volatile entity_state_t pacman;
+volatile game_state_t game_state;
+
+volatile pills_t pills;
+
+uint16_t get_rand_in_range(int min, int max){
+	
+	int seed;
+	uint16_t rand_n = 0;
+	
+	seed = (LPC_TIM1->TC)*65;
+	seed &= 0xFFF;
+	rand_n = (seed%(max-min-1))+min;
+	
+	return rand_n;
+}
 
 void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
 	
@@ -59,19 +79,19 @@ void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
 }
 
 void game_init(){
+	  int i;
 
 		LCD_Clear(Black);
-		//pacman_init(START_X, START_Y, SPEED);
 	  
 		/*set and print counter*/
 		game_state.counter = MAX_TIME;
-	  GUI_Text(0,0,(uint8_t *) "  TIME  ", White, Black);
-		print_number(game_state.counter, 0, 12, White, Black);
+	  GUI_Text(0,5,(uint8_t *) "  TIME  ", White, Black);
+		print_number(game_state.counter, 0, 17, White, Black);
 
 		/*set and print score*/
 		game_state.score = 0;
-	  GUI_Text(MAX_X-80, 0, (uint8_t *) "  SCORE  ", White, Black); 
-	  print_number(game_state.score, MAX_X-80, 12, White, Black);
+	  GUI_Text(MAX_X-80, 5, (uint8_t *) "  SCORE  ", White, Black); 
+	  print_number(game_state.score, MAX_X-80, 17, White, Black);
 	
 		/*set and print lives*/
 		game_state.lives = 0;
@@ -80,13 +100,19 @@ void game_init(){
 	  /*initialize map*/
 		map_init();
 	  game_state.eaten_pills = 0;
+	
+		/*extract random times in which power pills spawn*/
+		ppills_generate_t();
+		pills.pp_i = 0;
 		
-	  game_pause();
+		game_pause();
 }
 
 void game_update(){
+	
 		static uint8_t c, r;
 	  uint16_t i;
+	  int pos;
 	
 		pixels2map(pacman.posX, pacman.posY, &r, &c);
 		
@@ -95,7 +121,7 @@ void game_update(){
 		if(map[r][c] == 1){
 			i = pill_getIndex(r,c);
 			map[r][c] = 3;
-			pills[i].isEaten = 1;
+			pills.v_pills[i].isEaten = 1;
 			game_state.eaten_pills++;
 			score_update(0);
 			if(game_state.eaten_pills == PILL_N){
@@ -123,7 +149,7 @@ void game_update(){
 						pacman.posX -= pacman.speed;
 					break;
 				case G_RIGHT:
-					if(c+1>MAP_C-1 ||map[r][c+1]!=0)
+					if(c+1>MAP_C-1 || map[r][c+1]!=0)
 						pacman.posX += pacman.speed;
 					break;
 				default:
@@ -138,8 +164,13 @@ void game_update(){
 			pacman.posX = x_margin+MAP_N/2;
 			c = 0;
 		}
-
-	pacman_display(pacman.posX, pacman.posY);
+		
+		/* check if we have to generate a pp and generate it*/
+		if(pills.pp_i < PPILL_N && game_state.counter == pills.powerpills_t[pills.pp_i]){
+			ppill_generate();
+		}
+		
+		pacman_display(pacman.posX, pacman.posY);
 
 	
 }
@@ -170,7 +201,7 @@ void game_resume(){
 			if(map[i][j] == 0)
 				print_tile(i,j,x_margin, y_margin);
 			else if(map[i][j] == 1)
-				print_circle(PILL_DIM, x_margin+j*MAP_N+(MAP_N/2), y_margin +i*MAP_N+(MAP_N/2), White);
+				print_circle(PILL_DIM, x_margin+j*MAP_N+(MAP_N/2), y_margin +i*MAP_N+(MAP_N/2), Pink);
 		}
 	}
 	
@@ -279,7 +310,7 @@ void counter_update(){
 	    
 				game_state.counter --;
 	
-				print_number(game_state.counter, 0, 12, White, Black);
+				print_number(game_state.counter, 0, 17, White, Black);
 					
 				if(game_state.counter == 0)
 					game_over();
@@ -291,7 +322,7 @@ void score_update(uint8_t PowerPill){
 					game_state.score += 50;
 			 game_state.score += 10;
 	
-			 print_number(game_state.score, MAX_X-80, 12, White, Black);
+			 print_number(game_state.score, MAX_X-80, 17, White, Black);
 			 
 			 if(game_state.score >= game_state.lives*1000){
 				 game_gain_life();
@@ -411,7 +442,7 @@ uint16_t pill_getIndex(uint8_t r, uint8_t c){
 	uint16_t i;
 	
 	for(i=0;i<PILL_N;i++){
-		if(pills[i].r == r && pills[i].c == c){
+		if(pills.v_pills[i].r == r && pills.v_pills[i].c == c){
 			break;
 		}
 	}
@@ -424,13 +455,42 @@ void pill_create(uint8_t r, uint8_t c){
 	
 	map2pixels(r, c, &x, &y);
 
-	pills[n_pills].c = c;
-	pills[n_pills].r = r;
-	pills[n_pills].isEaten = 0;
-	pills[n_pills].PowerPill = 0;
-	n_pills++;
+	pills.v_pills[pills.n_pills].c = c;
+	pills.v_pills[pills.n_pills].r = r;
+	pills.v_pills[pills.n_pills].isEaten = 0;
+	pills.v_pills[pills.n_pills].PowerPill = 0;
+	pills.n_pills++;
 	
-	print_circle(PILL_DIM, x, y, White);
+	print_circle(PILL_DIM, x, y, Pink);
+	
+}
+
+void ppills_generate_t(){
+	int min, max, i, t;
+	
+	min = 51;
+	max = 60;
+	
+	for(i=0; i<PPILL_N; i++){
+		pills.powerpills_t[i] = get_rand_in_range(min, max);
+		min -= 10;
+		max -= 10;
+	}
+	
+}
+
+void ppill_generate(){
+	uint16_t posX, posY, pos;
+	
+	pos = get_rand_in_range(0,PILL_N);
+	while(pills.v_pills[pos].isEaten == 1){
+		pos = get_rand_in_range(0, PILL_N);
+	}
+		
+	pills.v_pills[pos].PowerPill = 1;
+	map2pixels(pills.v_pills[pos].r, pills.v_pills[pos].c, &posX, &posY);
+	print_circle(PPILL_DIM, posX, posY, Pink);
+	pills.pp_i++;
 	
 }
 

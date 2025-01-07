@@ -36,10 +36,12 @@ int main (void) {
   BUTTON_init();												/* BUTTON Initialization              */
 	joystick_init();											/* Joystick Initialization            */
 	init_timer(0,0,0,3,0x17D7840);				/* TIMER0 Initialization	-> 1s			  */
+	init_timer(1,0,0,0,0);								/* TIMER1 Inirialization       			  */
+	
+	enable_timer(1);
 	
 	game_init();
 	
-	//enable_timer(0);
 	
 	init_RIT(0x004C4B40);									/* RIT Initialization 50 msec       	*/
 	enable_RIT();													/* RIT enabled			*/
