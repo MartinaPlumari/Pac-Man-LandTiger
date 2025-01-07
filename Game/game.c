@@ -123,7 +123,7 @@ void game_update(){
 			map[r][c] = 3;
 			pills.v_pills[i].isEaten = 1;
 			game_state.eaten_pills++;
-			score_update(0);
+			score_update(pills.v_pills[i].PowerPill);
 			if(game_state.eaten_pills == PILL_N){
 				game_victory();
 				return;
@@ -318,9 +318,11 @@ void counter_update(){
 
 void score_update(uint8_t PowerPill){
 	
-			 if(PowerPill == 1)
+			 if(PowerPill == 1){
 					game_state.score += 50;
-			 game_state.score += 10;
+			 }else{
+					game_state.score += 10;
+			 }
 	
 			 print_number(game_state.score, MAX_X-80, 17, White, Black);
 			 
