@@ -41,7 +41,7 @@ void RIT_IRQHandler (void)
 		if((LPC_GPIO1->FIOPIN & (1<<29)) == 0){	
 			/* Joystick UP pressed */
 			J_up++;
-			if(J_up == 1)
+			if(J_up >= 1)
 				pacman_change_dir(G_UP);
 			
 		}else{
@@ -51,7 +51,7 @@ void RIT_IRQHandler (void)
 		if((LPC_GPIO1->FIOPIN & (1<<28)) == 0){
 			/* Joystick RIGHT pressed */
 			J_right++;
-			if(J_right == 1)
+			if(J_right >= 1)
 				pacman_change_dir(G_RIGHT);
 
 		}else{
@@ -61,7 +61,7 @@ void RIT_IRQHandler (void)
 		if((LPC_GPIO1->FIOPIN & (1<<27)) == 0){
 			/* Joystick LEFT pressed */
 			J_left++;
-			if(J_left == 1)
+			if(J_left >= 1)
 					pacman_change_dir(G_LEFT);
 			
 		}else{
@@ -71,7 +71,7 @@ void RIT_IRQHandler (void)
 		if((LPC_GPIO1->FIOPIN & (1<<26)) == 0){
 			/* Joystick DOWN pressed */
 			J_down++;
-			if(J_down == 1)
+			if(J_down >= 1)
 				pacman_change_dir(G_DOWN);
 			
 		}else{

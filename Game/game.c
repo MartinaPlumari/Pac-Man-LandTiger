@@ -7,7 +7,7 @@
 
 #define START_X 100
 #define START_Y 100
-#define SPEED 5
+#define SPEED 2
 #define MAX_TIME 60
 
 #define PILL_DIM 2
@@ -123,7 +123,7 @@ void game_update(){
 						pacman.posX -= pacman.speed;
 					break;
 				case G_RIGHT:
-					if(c+1>MAP_C ||map[r][c+1]!=0)
+					if(c+1>MAP_C-1 ||map[r][c+1]!=0)
 						pacman.posX += pacman.speed;
 					break;
 				default:
@@ -132,9 +132,12 @@ void game_update(){
 		
 		//check if we have to teleport (only horizontal since we don't have it vertically)
 		if(pacman.posX-x_margin<=0){
-			pacman.posX = MAX_X-x_margin;
-		}else if(pacman.posX+x_margin>MAX_X)
-			pacman.posX = x_margin;
+			pacman.posX = MAX_X-x_margin-MAP_N/2;
+			c = MAP_C-1;
+		}else if(pacman.posX+x_margin>=MAX_X+MAP_N/2){
+			pacman.posX = x_margin+MAP_N/2;
+			c = 0;
+		}
 
 	pacman_display(pacman.posX, pacman.posY);
 
@@ -163,7 +166,7 @@ void game_resume(){
 	GUI_Text(MAX_X/2-35, MAX_Y/2, (uint8_t *) "         ", Black, Black);
 	
 	for(i=r-1; i<r+2; i++){
-		for(j=c; j<c+9; j++){
+		for(j=c-1; j<c+9; j++){
 			if(map[i][j] == 0)
 				print_tile(i,j,x_margin, y_margin);
 			else if(map[i][j] == 1)
@@ -200,7 +203,8 @@ void game_victory(){
 }
 
 void pacman_change_dir(uint8_t direction){
-	pacman.dir = direction;
+	if((pacman.posX-x_margin-MAP_N/2) % MAP_N == 0 && (pacman.posY-y_margin-MAP_N/2) % MAP_N == 0)
+		pacman.dir = direction;
 }
 
 void pacman_display(uint16_t Xpos, uint16_t Ypos){
@@ -332,7 +336,7 @@ void map2pixels (uint8_t r, uint8_t c, uint16_t *posX, uint16_t *posY){
 void pixels2map (uint16_t posX, uint16_t posY, uint8_t *r, uint8_t *c){
 	if((posX-x_margin-MAP_N/2) % MAP_N == 0)
 		*c = (posX - x_margin - MAP_N/2)/MAP_N;
-	if((posY-y_margin-MAP_N/2) % MAP_N == 0)
+	if((posY-y_margin-MAP_N/2) % MAP_N== 0)
 		*r = (posY - y_margin - MAP_N/2)/MAP_N;
 }
 
@@ -342,9 +346,31 @@ void print_tile(uint16_t r, uint16_t c, uint16_t x_margin, uint16_t y_margin){
 	
 	map2pixels(r,c,&x,&y);
 	
-	for(i=0;i<MAP_N;i++){
-		LCD_DrawLine(x-MAP_N/2, y-MAP_N/2+i, x+MAP_N/2, y-MAP_N/2+i, Blue);
+	/*upper line*/
+	if(r-1<0 || map[r-1][c]!=0){
+		LCD_DrawLine(x-MAP_N/2, y-MAP_N/2, x+MAP_N/2, y-MAP_N/2, Blue);
+		LCD_DrawLine(x-MAP_N/2, y-MAP_N/2-1, x+MAP_N/2, y-MAP_N/2-1, Blue);
 	}
+	/*bottom line*/
+	if(r+1>=MAP_R || map[r+1][c]!=0){
+		LCD_DrawLine(x-MAP_N/2, y+MAP_N/2, x+MAP_N/2, y+MAP_N/2, Blue);
+		LCD_DrawLine(x-MAP_N/2, y+MAP_N/2-1, x+MAP_N/2, y+MAP_N/2-1, Blue);
+	}
+	/*left line*/
+	if(c-1<0 || map[r][c-1]!=0){
+		LCD_DrawLine(x-MAP_N/2, y-MAP_N/2, x-MAP_N/2, y+MAP_N/2, Blue);
+		LCD_DrawLine(x-MAP_N/2-1, y-MAP_N/2, x-MAP_N/2-1, y+MAP_N/2, Blue);
+	}
+	/*right line*/
+	if(c+1>=MAP_C || map[r][c+1]!=0){
+		LCD_DrawLine(x+MAP_N/2, y-MAP_N/2, x+MAP_N/2, y+MAP_N/2, Blue);
+		LCD_DrawLine(x+MAP_N/2-1, y-MAP_N/2, x+MAP_N/2-1, y+MAP_N/2, Blue);
+	}
+		
+	
+	/*for(i=0;i<MAP_N;i++){
+		LCD_DrawLine(x-MAP_N/2, y-MAP_N/2+i, x+MAP_N/2, y-MAP_N/2+i, Blue);
+	}*/
 }
 
 void game_gain_life(){
