@@ -12,6 +12,9 @@
 #include "../GLCD/GLCD.h"
 #include "../Game/game.h"
 
+/*comment the define if you want to use emulator's default scaling*/
+#define CUSTOM_SCALING
+
 /******************************************************************************
 ** Function name:		RIT_IRQHandler
 **
@@ -34,7 +37,10 @@ void RIT_IRQHandler (void)
 	static int J_right = 0;
 	static int J_left = 0;
 	
-	//riscrivere codice -> fare file di libreria più carini
+#ifndef CUSTOM_SCALING
+	disable_RIT();
+	reset_RIT();
+#endif
 	
 	if(game_state.curr_state == PLAY){
 		/*joystick behavior*/
@@ -85,7 +91,7 @@ void RIT_IRQHandler (void)
 		if(B_down>=1){ 
 			if((LPC_GPIO2->FIOPIN & (1<<10)) == 0){	/* INT0 pressed */
 				switch(B_down){				
-					case 2:				/* pay attention here: please see slides to understand value 2 */
+					case 2:		
 					/*INT0 behavior*/
 					
 					//pause and restart game when pressing the button
@@ -107,13 +113,12 @@ void RIT_IRQHandler (void)
 				NVIC_EnableIRQ(EINT0_IRQn);							 /* enable Button interrupts			*/
 				LPC_PINCON->PINSEL4    |= (1 << 20);     /* External interrupt 0 pin selection */
 			}
-	}
-/*	else{
-			if(down==1)
-				down++;
-	} */
-	
-	
+		}
+		
+#ifndef CUSTOM_SCALING
+	enable_RIT();
+#endif		
+		
   LPC_RIT->RICTRL |= 0x1;	/* clear interrupt flag */
 	
   return;

@@ -7,6 +7,7 @@
 
 #define START_X 100
 #define START_Y 100
+/*change speed to 5 if using custom scaling value, leave it to 2 for default scaling or board*/
 #define SPEED 5
 #define MAX_TIME 60
 
@@ -107,11 +108,14 @@ void game_update(){
 		
 		//check for eaten pill
 		if(map[r][c] == 1){
+			
 			i = pill_getIndex(r,c);
 			map[r][c] = 3;
 			pills.v_pills[i].isEaten = 1;
 			game_state.eaten_pills++;
 			score_update(pills.v_pills[i].PowerPill);
+			
+			//victory check
 			if(game_state.eaten_pills == PILL_N){
 				game_victory();
 				return;
@@ -444,7 +448,6 @@ void map_init(){
 				print_tile(i, j, x_margin, y_margin);
 			}else if(map[i][j] == 1){
 				//print pill
-				//print_circle(PILL_DIM, x_margin+j*MAP_N+(MAP_N/2), y_margin +i*MAP_N+(MAP_N/2), White);
 				pill_create(i,j);
 			}else if(map[i][j] == 2){
 				//print pacman
