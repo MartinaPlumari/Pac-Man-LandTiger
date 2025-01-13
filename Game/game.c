@@ -462,7 +462,7 @@ uint16_t get_rand_in_range(int min, int max){
 	int seed;
 	uint16_t rand_n = 0;
 	
-	seed = (LPC_TIM1->TC)*65;
+	seed = (LPC_TIM0->TC)*65;
 	seed &= 0xFFF;
 	rand_n = (seed%(max-min-1))+min;
 	

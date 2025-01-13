@@ -11,9 +11,10 @@
 #include "RIT.h"
 #include "../GLCD/GLCD.h"
 #include "../Game/game.h"
+#include "../music/music.h"
 
 /*comment the define if you want to use emulator's default scaling*/
-#define CUSTOM_SCALING
+//#define CUSTOM_SCALING
 
 /******************************************************************************
 ** Function name:		RIT_IRQHandler
@@ -37,10 +38,22 @@ void RIT_IRQHandler (void)
 	static int J_right = 0;
 	static int J_left = 0;
 	
+	static int currentNote = 0;
+	static int ticks = 0;
+	
 #ifndef CUSTOM_SCALING
 	disable_RIT();
 	reset_RIT();
 #endif
+	
+		/*music management*/
+		if(!isNotePlaying()){
+			++ticks;
+			if(ticks == UPTICKS){
+				ticks = 0;
+				playNote(theme[currentNote++]);
+			}
+		}
 	
 	if(game_state.curr_state == PLAY){
 		/*joystick behavior*/
@@ -114,6 +127,13 @@ void RIT_IRQHandler (void)
 				LPC_PINCON->PINSEL4    |= (1 << 20);     /* External interrupt 0 pin selection */
 			}
 		}
+		
+		
+		/* capire a che serve
+		(currentNote == (sizeof(theme) / sizeof(theme[0])))
+	  {
+			disable_RIT();
+	  }*/
 		
 #ifndef CUSTOM_SCALING
 	enable_RIT();

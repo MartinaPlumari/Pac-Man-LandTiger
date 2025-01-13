@@ -15,7 +15,6 @@
                   
 #include <stdio.h>
 #include "LPC17xx.h"                    /* LPC17xx definitions                */
-#include "led/led.h"
 #include "button_EXINT/button.h"
 #include "timer/timer.h"
 #include "RIT/RIT.h"
@@ -36,19 +35,25 @@ int main (void) {
   BUTTON_init();												/* BUTTON Initialization              */
 	joystick_init();											/* Joystick Initialization            */
 	init_timer(0,0,0,3,0x17D7840);				/* TIMER0 Initialization							*/
-	init_timer(1,0,0,0,0);								/* TIMER1 Initialization       			  */
+	init_RIT(0x004C4B40);									/* RIT Initialization 50 msec 				*/
+	//init_timer(1,0,0,0,0);								/* TIMER1 Initialization       			  */
 	
-	enable_timer(1);
+	//enable_timer(1);
 	
 	game_init();
 	
-	
-	init_RIT(0x004C4B40);									/* RIT Initialization 50 msec 	*/
-	enable_RIT();													/* RIT enabled			                  */
-  
+		
+	enable_RIT();													
+	ADC_init();
 	
 	LPC_SC->PCON |= 0x1;									/* power-down	mode										*/
 	LPC_SC->PCON &= ~(0x2);						
+	
+	LPC_PINCON->PINSEL1 |= (1<<21);	      /* set speaker pins										*/
+	LPC_PINCON->PINSEL1 &= ~(1<<20);
+	LPC_GPIO0->FIODIR |= (1<<26);
+	
+	LPC_SC -> PCONP |= (1 << 22);  				/* TURN ON TIMER 2                    */
 		
   while (1) {                           /* Loop forever                       */	
 		__ASM("wfi");
