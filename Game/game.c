@@ -73,8 +73,6 @@ uint16_t get_rand_in_range(int min, int max);
 void game_init(){
 	  int i;
 
-		LCD_Clear(Black);
-
 		/*set initial sound*/
 		sfx_init();
 	  
@@ -90,8 +88,7 @@ void game_init(){
 	
 		/*set and print lives*/
 		game_state.lives = 1;
-		//qui rimettere la print
-		//CAN_send_status(game_state.counter, game_state.lives, game_state.score); 
+		//manca una print se non si usa il CAN
 		
 	  /*initialize map*/
 		map_init();
@@ -113,23 +110,6 @@ void game_update(){
 	
 		pixels2map(pacman.posX, pacman.posY, &r, &c);
 		
-		//check for eaten pill
-		if(map[r][c] == 1){
-			
-			changeSound(CHOMP);
-			i = pill_getIndex(r,c);
-			map[r][c] = 3;
-			pills.v_pills[i].isEaten = 1;
-			game_state.eaten_pills++;
-			score_update(pills.v_pills[i].PowerPill);
-			
-			//victory check
-			if(game_state.eaten_pills == PILL_N){
-				game_victory();
-				return;
-			}
-			
-		}
 	
 		/* PACMAN RENDERING */
 		pacman_clear(pacman.posX, pacman.posY);
@@ -171,8 +151,24 @@ void game_update(){
 		}
 		
 		pacman_display(pacman.posX, pacman.posY);
-
-	
+		
+		//check for eaten pill
+		if(map[r][c] == 1){
+			
+			changeSound(CHOMP);
+			i = pill_getIndex(r,c);
+			map[r][c] = 3;
+			pills.v_pills[i].isEaten = 1;
+			game_state.eaten_pills++;
+			score_update(pills.v_pills[i].PowerPill);
+			
+			//victory check
+			if(game_state.eaten_pills == PILL_N){
+				game_victory();
+				return;
+			}
+			
+		}
 }
 
 void game_pause(){
@@ -213,6 +209,7 @@ void game_resume(){
 
 void game_over(){
 	
+	CAN_disable_IRQ();
 	game_state.curr_state = GAME_OVER;
 	changeSound(LOSE);
 	disable_timer(0);
@@ -224,6 +221,7 @@ void game_over(){
 
 void game_victory(){
 	
+	CAN_disable_IRQ();
 	changeSound(THEME);
 	game_state.curr_state = VICTORY;
 	disable_timer(0);
@@ -237,7 +235,7 @@ void game_display_life(int lives){
 	int i, j;
 	int X, Y;
 	
-	X = 15 + lives*15;
+	X = 15 + (lives-1)*15;
 	Y = MAX_Y - 20;
 	
 	//print life

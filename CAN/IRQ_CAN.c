@@ -51,7 +51,7 @@ void CAN_IRQHandler (void)  {
 
 	if (icr & (1 << 0)) {                          	/* CAN Controller #2 meassage is received */
 		CAN_rdMsg (2, &CAN_RxMsg);	                		/* Read the message */
-
+		LPC_CAN2->CMR = (1 << 2);                    		/* Release receive buffer */
 		
 		//	CAN_TxMsg.data[0] = d0_score;
 		//	CAN_TxMsg.data[1] = d1_score;
@@ -77,8 +77,5 @@ void CAN_IRQHandler (void)  {
 				print_number(msg_counter, 0, 17, White, Black);
 				prev_counter = msg_counter;
 		}
-		
-		LPC_CAN2->CMR = (1 << 2);                    		/* Release receive buffer */
-		
 	}
 }

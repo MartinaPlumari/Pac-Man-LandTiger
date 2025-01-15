@@ -34,6 +34,7 @@ int main (void) {
 	SystemInit();  												/* System Initialization (i.e., PLL)  */
 	CAN_Init();														/* CAN Screen Initialization          */
   LCD_Initialization();									/* LCD Screen Initialization          */
+	LCD_Clear(Black);
   BUTTON_init();												/* BUTTON Initialization              */
 	joystick_init();											/* Joystick Initialization            */
 	init_timer(0,0,0,3,0x17D7840);				/* TIMER0 Initialization							*/

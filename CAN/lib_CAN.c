@@ -102,6 +102,9 @@ void CAN_setup (uint32_t ctrl)  {
   pCAN->IER   = 0x0003;                          /* Enable Tx and Rx interrupt */
 }
 
+void CAN_disable_IRQ(){
+		NVIC_DisableIRQ(CAN_IRQn);
+}
 
 /*----------------------------------------------------------------------------
   leave initialisation mode.  CAN controller (1..2)

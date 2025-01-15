@@ -44,7 +44,9 @@ void CAN_wrFilter      (uint32_t ctrl, uint32_t id, uint8_t filter_type);
 void CAN_Init 				 (void);
 
 extern CAN_msg       CAN_TxMsg;      /* CAN messge for sending */
-extern CAN_msg       CAN_RxMsg;      /* CAN message for receiving */                                
+extern CAN_msg       CAN_RxMsg;      /* CAN message for receiving */          
+
+void CAN_disable_IRQ();
 
 #endif // _CAN_H_
 
