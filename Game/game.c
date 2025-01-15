@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include "../GLCD/GLCD.h"
 #include "animationLib.h"
+#include "../music/music.h"
 #include "../timer/timer.h"
+#include "../CAN/CAN.h"
 
 
 #define START_X 100
@@ -72,6 +74,9 @@ void game_init(){
 	  int i;
 
 		LCD_Clear(Black);
+
+		/*set initial sound*/
+		sfx_init();
 	  
 		/*set and print counter*/
 		game_state.counter = MAX_TIME;
@@ -84,12 +89,14 @@ void game_init(){
 	  print_number(game_state.score, MAX_X-80, 17, White, Black);
 	
 		/*set and print lives*/
-		game_state.lives = 0;
-		game_gain_life();
+		game_state.lives = 1;
+		//qui rimettere la print
+		//CAN_send_status(game_state.counter, game_state.lives, game_state.score); 
 		
 	  /*initialize map*/
 		map_init();
 	  game_state.eaten_pills = 0;
+		
 	
 		/*extract random times in which power pills spawn*/
 		ppills_generate_t();
@@ -109,6 +116,7 @@ void game_update(){
 		//check for eaten pill
 		if(map[r][c] == 1){
 			
+			changeSound(CHOMP);
 			i = pill_getIndex(r,c);
 			map[r][c] = 3;
 			pills.v_pills[i].isEaten = 1;
@@ -206,6 +214,7 @@ void game_resume(){
 void game_over(){
 	
 	game_state.curr_state = GAME_OVER;
+	changeSound(LOSE);
 	disable_timer(0);
 	
 	LCD_Clear(Red);
@@ -215,6 +224,7 @@ void game_over(){
 
 void game_victory(){
 	
+	changeSound(THEME);
 	game_state.curr_state = VICTORY;
 	disable_timer(0);
 	
@@ -223,11 +233,11 @@ void game_victory(){
 	GUI_Text(MAX_X/2-45, MAX_Y/2, (uint8_t *) "  VICTORY!  ", Black, Green);
 }
 
-void game_gain_life(){
+void game_display_life(int lives){
 	int i, j;
 	int X, Y;
 	
-	X = 15 + (game_state.lives)*15;
+	X = 15 + lives*15;
 	Y = MAX_Y - 20;
 	
 	//print life
@@ -238,14 +248,17 @@ void game_gain_life(){
 					}
 				}
 	}
-	game_state.lives++;
+	//game_state.lives = lives;
+	
+
 }
 
-void game_lose_life(){
+void game_clear_life(int lives){
 	int i, j;
 	int X, Y;
 	
-	X = 15 + (game_state.lives-1)*15;
+	//attenta, probabilmente va tolto il -1
+	X = 15 + (lives-1)*15;
 	Y = MAX_Y - 20;
 	
 	//erase life
@@ -256,7 +269,7 @@ void game_lose_life(){
 					}
 				}
 	}
-		game_state.lives--;
+		//game_state.lives = lives;
 }
 
 void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
@@ -345,13 +358,14 @@ void pacman_clear(uint16_t Xpos, uint16_t Ypos){
 }
 
 void counter_update(){
-	    
-				game_state.counter --;
-	
-				print_number(game_state.counter, 0, 17, White, Black);
+				
+				game_state.counter --; 
+				CAN_send_status(game_state.counter, game_state.lives, game_state.score); 
+				//print_number(counter, 0, 17, White, Black);
 					
 				if(game_state.counter == 0)
 					game_over();
+				
 }
 
 void score_update(uint8_t PowerPill){
@@ -361,12 +375,17 @@ void score_update(uint8_t PowerPill){
 			 }else{
 					game_state.score += 10;
 			 }
+			 
+			 //CAN_send_status(game_state.counter, game_state.lives, game_state.score);
 	
-			 print_number(game_state.score, MAX_X-80, 17, White, Black);
+			 //print_number(game_state.score, MAX_X-80, 17, White, Black);
 			 
 			 if(game_state.score >= game_state.lives*1000){
-				 game_gain_life();
+				 game_state.lives ++;
+				 changeSound(NEW_LIFE);
 			 }
+			 
+			 CAN_send_status(game_state.counter, game_state.lives, game_state.score); 					
 }
 uint16_t pill_getIndex(uint8_t r, uint8_t c){
 	uint16_t i;
@@ -455,6 +474,23 @@ void map_init(){
 			}
 		}
 	}
+}
+
+
+//valutare se spostare il funzionamento in CAN
+void CAN_send_status(uint16_t counter, uint8_t lives, uint16_t score){
+	
+	char score_h = (score & 0xFF00) >> 8;
+	
+	CAN_TxMsg.data[0] = (char) score;
+	CAN_TxMsg.data[1] = score_h;
+	CAN_TxMsg.data[2] = (char)lives;
+	CAN_TxMsg.data[3] = (char) counter;
+	CAN_TxMsg.len = 4;
+	CAN_TxMsg.id = 2;
+	CAN_TxMsg.format = STANDARD_FORMAT;
+	CAN_TxMsg.type = DATA_FRAME;
+	CAN_wrMsg(1, &CAN_TxMsg);
 }
 
 uint16_t get_rand_in_range(int min, int max){

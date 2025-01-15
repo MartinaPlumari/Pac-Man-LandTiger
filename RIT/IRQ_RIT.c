@@ -14,7 +14,7 @@
 #include "../music/music.h"
 
 /*comment the define if you want to use emulator's default scaling*/
-//#define CUSTOM_SCALING
+#define CUSTOM_SCALING
 
 /******************************************************************************
 ** Function name:		RIT_IRQHandler
@@ -46,15 +46,7 @@ void RIT_IRQHandler (void)
 	reset_RIT();
 #endif
 	
-		/*music management*/
-		if(!isNotePlaying()){
-			++ticks;
-			if(ticks == UPTICKS){
-				ticks = 0;
-				playNote(theme[currentNote++]);
-			}
-		}
-	
+
 	if(game_state.curr_state == PLAY){
 		/*joystick behavior*/
 		if((LPC_GPIO1->FIOPIN & (1<<29)) == 0){	
@@ -128,6 +120,15 @@ void RIT_IRQHandler (void)
 			}
 		}
 		
+		/*music management*/
+		if(!isNotePlaying()){
+			++ticks;
+			if(ticks == UPTICKS){
+				ticks = 0;
+				playSound();
+			}
+		}
+	
 		
 		/* capire a che serve
 		(currentNote == (sizeof(theme) / sizeof(theme[0])))
