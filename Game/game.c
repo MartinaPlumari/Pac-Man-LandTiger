@@ -6,12 +6,11 @@
 #include "../timer/timer.h"
 #include "../CAN/CAN.h"
 
-
-#define START_X 100
-#define START_Y 100
 /*change speed to 5 if using custom scaling value, leave it to 2 for default scaling or board*/
-#define SPEED 5
+#define P_SPEED 2
 #define MAX_TIME 60
+
+#define G_SPEED 1
 
 #define PILL_DIM 2
 #define PPILL_DIM 4
@@ -64,6 +63,7 @@ const x_margin = (MAX_X-MAP_C*MAP_N)/2;
 const y_margin = (MAX_Y-MAP_R*MAP_N)/2;
 
 volatile entity_state_t pacman;
+volatile entity_state_t ghost;
 volatile game_state_t game_state;
 volatile pills_t pills;
 
@@ -88,7 +88,7 @@ void game_init(){
 	
 		/*set and print lives*/
 		game_state.lives = 1;
-		//manca una print se non si usa il CAN
+		//manca una print se non si usa il CAN (viene fatta al primo secondo)
 		
 	  /*initialize map*/
 		map_init();
@@ -112,45 +112,19 @@ void game_update(){
 		
 	
 		/* PACMAN RENDERING */
-		pacman_clear(pacman.posX, pacman.posY);
-		
-		//position update
-		switch(pacman.dir){
-				case G_UP:
-					if(map[r-1][c]!=0)
-						pacman.posY -= pacman.speed;
-					break;
-				case G_DOWN:
-					if(map[r+1][c]!=0)
-						pacman.posY += pacman.speed;
-					break;
-				case G_LEFT:
-					if(c-1<0 || map[r][c-1]!=0)
-						pacman.posX -= pacman.speed;
-					break;
-				case G_RIGHT:
-					if(c+1>MAP_C-1 || map[r][c+1]!=0)
-						pacman.posX += pacman.speed;
-					break;
-				default:
-					break;
-		}
-		
-		/*check if we have to teleport (only horizontal since we don't have it vertically)*/
-		if(pacman.posX-x_margin<=0){
-			pacman.posX = MAX_X-x_margin-MAP_N/2;
-			c = MAP_C-1;
-		}else if(pacman.posX+x_margin>=MAX_X+MAP_N/2){
-			pacman.posX = x_margin+MAP_N/2;
-			c = 0;
-		}
+		pacman_clear(pacman.posX, pacman.posY);	
+		pacman_pos_update(r,c);
+		pacman_display(pacman.posX, pacman.posY);
+	
+		/*GHOST RENDERING*/
+		ghost_clear(ghost.posX, ghost.posY);
+		ghost_display(ghost.posX, ghost.posY);
 		
 		/* check if we have to generate a pp and generate it*/
 		if(pills.pp_i < PPILL_N && game_state.counter == pills.powerpills_t[pills.pp_i]){
 			ppill_generate();
 		}
 		
-		pacman_display(pacman.posX, pacman.posY);
 		
 		//check for eaten pill
 		if(map[r][c] == 1){
@@ -160,14 +134,13 @@ void game_update(){
 			map[r][c] = 3;
 			pills.v_pills[i].isEaten = 1;
 			game_state.eaten_pills++;
-			score_update(pills.v_pills[i].PowerPill);
+			score_update(pills.v_pills[i].PowerPill); //can update is here
 			
 			//victory check
 			if(game_state.eaten_pills == PILL_N){
 				game_victory();
 				return;
 			}
-			
 		}
 }
 
@@ -355,6 +328,106 @@ void pacman_clear(uint16_t Xpos, uint16_t Ypos){
 	
 }
 
+void pacman_pos_update(uint8_t r, uint8_t c){
+	
+			//position update
+		switch(pacman.dir){
+				case G_UP:
+					if(map[r-1][c]!=0)
+						pacman.posY -= pacman.speed;
+					break;
+				case G_DOWN:
+					if(map[r+1][c]!=0)
+						pacman.posY += pacman.speed;
+					break;
+				case G_LEFT:
+					if(c-1<0 || map[r][c-1]!=0)
+						pacman.posX -= pacman.speed;
+					break;
+				case G_RIGHT:
+					if(c+1>MAP_C-1 || map[r][c+1]!=0)
+						pacman.posX += pacman.speed;
+					break;
+				default:
+					break;
+		}
+		
+		/*check if we have to teleport (only horizontal since we don't have it vertically)*/
+		if(pacman.posX-x_margin<=0){
+			pacman.posX = MAX_X-x_margin-MAP_N/2;
+			c = MAP_C-1;
+		}else if(pacman.posX+x_margin>=MAX_X+MAP_N/2){
+			pacman.posX = x_margin+MAP_N/2;
+			c = 0;
+		}
+	
+}
+
+void ghost_init(uint16_t posX, uint16_t posY, uint16_t speed){
+		
+		ghost.posX = posX;
+		ghost.posY = posY;
+		ghost.speed = speed;
+		ghost.dir = G_LEFT;
+	  ghost.anim_frame = 0;
+	
+		ghost_display(ghost.posX, ghost.posY);
+	
+}
+
+void ghost_display(uint16_t Xpos, uint16_t Ypos){
+	int i, j;
+	int X, Y;
+	
+	X = Xpos - N/2;
+	Y = Ypos - N/2;
+	
+	//fare print pillola
+	
+		if (ghost.dir == G_LEFT || ghost.dir == G_UP){
+			for(i=0; i<N; i++){
+				for(j=0;j<N;j++){
+					if(ghost_anim[ghost.anim_frame][i][N-j-1] == 1){
+						LCD_SetPoint(X+j, Y+i, Red);
+					}else if(ghost_anim[ghost.anim_frame][i][N-j-1] == 2){
+						LCD_SetPoint(X+j, Y+i, White);
+					}
+				}
+			}
+		}
+		else if (ghost.dir == G_RIGHT || ghost.dir == G_DOWN){
+			for(i=0; i<N; i++){
+				for(j=0;j<N;j++){
+					if(ghost_anim[ghost.anim_frame][i][j] == 1){
+						LCD_SetPoint(X+j, Y+i, Red);
+					}else if(ghost_anim[ghost.anim_frame][i][j] == 2){
+						LCD_SetPoint(X+j, Y+i, White);
+					}
+				}
+			}
+		}
+	
+	ghost.anim_frame ++;
+	if(ghost.anim_frame >= 3)
+		ghost.anim_frame = 0;
+	
+}
+
+void ghost_clear(uint16_t Xpos, uint16_t Ypos){
+	int i, j;
+	int X, Y;
+	
+	X = Xpos - N/2;
+	Y = Ypos - N/2;
+	
+	for(i=0; i<N; i++){
+		for(j=0;j<N;j++){
+				LCD_SetPoint(X+j, Y+i, Black);
+		}
+	}
+	
+}
+
 void counter_update(){
 				
 				game_state.counter --; 
@@ -460,15 +533,26 @@ void map_init(){
 	
 	for(i=0; i<MAP_R; i++){
 		for(j=0; j<MAP_C; j++){
-			if(map[i][j] == 0){
-				//print wall tile
-				print_tile(i, j, x_margin, y_margin);
-			}else if(map[i][j] == 1){
-				//print pill
-				pill_create(i,j);
-			}else if(map[i][j] == 2){
-				//print pacman
-				pacman_init(x_margin+j*MAP_N+(MAP_N/2), y_margin+i*MAP_N+(MAP_N/2), SPEED);
+			switch(map[i][j]){
+				case 0:
+					//print wall tile
+					print_tile(i, j, x_margin, y_margin);
+					break;
+				case 1:
+					//print pill
+					pill_create(i,j);
+					break;
+				case 2:
+					//print pacman
+					pacman_init(x_margin+j*MAP_N+(MAP_N/2), y_margin+i*MAP_N+(MAP_N/2), P_SPEED);
+				case 3:
+					break;
+				case 4:
+					//print gate
+					print_gate(i, j, x_margin, y_margin);
+					break;
+				case 5:
+					ghost_init(x_margin+j*MAP_N+(MAP_N/2), y_margin+i*MAP_N+(MAP_N/2), G_SPEED);
 			}
 		}
 	}

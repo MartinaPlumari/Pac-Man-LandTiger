@@ -14,7 +14,7 @@
 #include "../music/music.h"
 
 /*comment the define if you want to use emulator's default scaling*/
-#define CUSTOM_SCALING
+//#define CUSTOM_SCALING
 
 /******************************************************************************
 ** Function name:		RIT_IRQHandler
