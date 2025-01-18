@@ -62,6 +62,12 @@ typedef struct{
 
 const x_margin = (MAX_X-MAP_C*MAP_N)/2;
 const y_margin = (MAX_Y-MAP_R*MAP_N)/2;
+const int moves[4][3] = {
+        {-1, 0, G_UP}, // Up
+        {1, 0, G_DOWN},  // Down
+        {0, -1, G_LEFT}, // Left
+        {0, 1, G_RIGHT}   // Right
+    };
 
 volatile entity_state_t pacman;
 volatile entity_state_t ghost;
@@ -107,6 +113,7 @@ void game_update(){
 	
 		static uint8_t c, r, g_c, g_r;
 	  uint16_t i;
+		uint8_t prev_g_dir;
 	  int pos;
 	
 		pixels2map(pacman.posX, pacman.posY, &r, &c);
@@ -120,8 +127,9 @@ void game_update(){
 	
 		/*GHOST RENDERING*/
 		ghost_clear(ghost.posX, ghost.posY);
+	  prev_g_dir = ghost.dir;
 		ghost_pos_update(g_r, g_c, r, c);
-		ghost_display(ghost.posX, ghost.posY);
+		ghost_display(ghost.posX, ghost.posY, prev_g_dir);
 		
 		/* check if we have to generate a pp and generate it*/
 		if(pills.pp_i < PPILL_N && game_state.counter == pills.powerpills_t[pills.pp_i]){
@@ -130,7 +138,7 @@ void game_update(){
 		
 		
 		//check for eaten pill
-		if(map[r][c] == 1){
+		if(map[r][c] == 1 || map[r][c] == 6){
 			
 			changeSound(CHOMP);
 			i = pill_getIndex(r,c);
@@ -374,13 +382,14 @@ void ghost_init(uint16_t posX, uint16_t posY, uint16_t speed){
 		ghost.dir = G_LEFT;
 	  ghost.anim_frame = 0;
 	
-		ghost_display(ghost.posX, ghost.posY);
+		ghost_display(ghost.posX, ghost.posY, ghost.dir);
 	
 }
 
-void ghost_display(uint16_t Xpos, uint16_t Ypos){
+void ghost_display(uint16_t Xpos, uint16_t Ypos, uint8_t prev_dir){
 	int i, j;
 	uint8_t r, c;
+	uint16_t tx, ty;
 	int X, Y;
 	
 	pixels2map(Xpos, Ypos, &r, &c);
@@ -388,11 +397,16 @@ void ghost_display(uint16_t Xpos, uint16_t Ypos){
 	X = Xpos - N/2;
 	Y = Ypos - N/2;
 	
+	r = r - moves[prev_dir][0];
+	c = c - moves[prev_dir][1];
+	
+	map2pixels(r, c, &tx, &ty);
+	
 	//fare print pillola -> sistemare
 	switch(map[r][c]){
 		case 1:
 			//print pill
-			print_circle(PILL_DIM, Xpos, Ypos, Pink);
+			print_circle(PILL_DIM, tx, ty, Pink);
 			break;
 		case 4:
 			//print gate
@@ -400,7 +414,7 @@ void ghost_display(uint16_t Xpos, uint16_t Ypos){
 			break;
 		case 6:
 			//print ppill
-			print_circle(PPILL_DIM, Xpos, Ypos, Pink);
+			print_circle(PPILL_DIM, tx, ty, Pink);
 			break;
 		default:
 			break;
@@ -455,12 +469,6 @@ void ghost_change_dir(uint8_t g_c, uint8_t g_r, uint8_t p_c, uint8_t p_r){
 	uint8_t best_c = g_c;
 	int min_dist = N*N;
 	uint8_t new_r, new_c, best_dir, new_dir;
-	int moves[4][3] = {
-        {-1, 0, G_UP}, // Up
-        {1, 0, G_DOWN},  // Down
-        {0, -1, G_LEFT}, // Left
-        {0, 1, G_RIGHT}   // Right
-    };
 	int i, dist;
 		
 	best_dir = ghost.dir;
