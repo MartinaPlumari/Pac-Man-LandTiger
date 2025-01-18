@@ -95,7 +95,6 @@ void game_init(){
 	
 		/*set and print lives*/
 		game_state.lives = 1;
-		//manca una print se non si usa il CAN (viene fatta al primo secondo)
 		
 	  /*initialize map*/
 		map_init();
@@ -230,17 +229,13 @@ void game_display_life(int lives){
 					}
 				}
 	}
-	//game_state.lives = lives;
-	
-
 }
 
 void game_clear_life(int lives){
 	int i, j;
 	int X, Y;
 	
-	//attenta, probabilmente va tolto il -1
-	X = 15 + (lives-1)*15;
+	X = 15 + (lives)*15;
 	Y = MAX_Y - 20;
 	
 	//erase life
@@ -251,7 +246,6 @@ void game_clear_life(int lives){
 					}
 				}
 	}
-		//game_state.lives = lives;
 }
 
 void pacman_init(uint16_t posX, uint16_t posY, uint16_t speed){
@@ -402,7 +396,6 @@ void ghost_display(uint16_t Xpos, uint16_t Ypos, uint8_t prev_dir){
 	
 	map2pixels(r, c, &tx, &ty);
 	
-	//fare print pillola -> sistemare
 	switch(map[r][c]){
 		case 1:
 			//print pill
