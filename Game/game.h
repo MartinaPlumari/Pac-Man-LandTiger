@@ -47,6 +47,8 @@ void pacman_pos_update(uint8_t r, uint8_t c);
 void ghost_init(uint16_t posX, uint16_t posY, uint16_t speed);
 void ghost_display(uint16_t Xpos, uint16_t Ypos);
 void ghost_clear(uint16_t Xpos, uint16_t Ypos);
+void ghost_change_dir(uint8_t g_c, uint8_t g_r, uint8_t p_c, uint8_t p_r);
+void ghost_pos_update(uint8_t g_r, uint8_t g_c, uint8_t p_r, uint8_t p_c);
 
 void counter_update();
 void score_update(uint8_t PowerPill);

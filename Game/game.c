@@ -1,5 +1,6 @@
 #include "game.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include "../GLCD/GLCD.h"
 #include "animationLib.h"
 #include "../music/music.h"
@@ -104,11 +105,12 @@ void game_init(){
 
 void game_update(){
 	
-		static uint8_t c, r;
+		static uint8_t c, r, g_c, g_r;
 	  uint16_t i;
 	  int pos;
 	
 		pixels2map(pacman.posX, pacman.posY, &r, &c);
+		pixels2map(ghost.posX, ghost.posY, &g_r, &g_c);
 		
 	
 		/* PACMAN RENDERING */
@@ -118,6 +120,7 @@ void game_update(){
 	
 		/*GHOST RENDERING*/
 		ghost_clear(ghost.posX, ghost.posY);
+		ghost_pos_update(g_r, g_c, r, c);
 		ghost_display(ghost.posX, ghost.posY);
 		
 		/* check if we have to generate a pp and generate it*/
@@ -333,19 +336,19 @@ void pacman_pos_update(uint8_t r, uint8_t c){
 			//position update
 		switch(pacman.dir){
 				case G_UP:
-					if(map[r-1][c]!=0)
+					if(map[r-1][c]!=0 && map[r-1][c]!=4)
 						pacman.posY -= pacman.speed;
 					break;
 				case G_DOWN:
-					if(map[r+1][c]!=0)
+					if(map[r+1][c]!=0 && map[r+1][c]!=4)
 						pacman.posY += pacman.speed;
 					break;
 				case G_LEFT:
-					if(c-1<0 || map[r][c-1]!=0)
+					if(c-1<0 || (map[r][c-1]!=0 && map[r][c-1]!=4))
 						pacman.posX -= pacman.speed;
 					break;
 				case G_RIGHT:
-					if(c+1>MAP_C-1 || map[r][c+1]!=0)
+					if(c+1>MAP_C-1 || (map[r][c+1]!=0 && map[r][c+1]!=4))
 						pacman.posX += pacman.speed;
 					break;
 				default:
@@ -377,12 +380,31 @@ void ghost_init(uint16_t posX, uint16_t posY, uint16_t speed){
 
 void ghost_display(uint16_t Xpos, uint16_t Ypos){
 	int i, j;
+	uint8_t r, c;
 	int X, Y;
+	
+	pixels2map(Xpos, Ypos, &r, &c);
 	
 	X = Xpos - N/2;
 	Y = Ypos - N/2;
 	
-	//fare print pillola
+	//fare print pillola -> sistemare
+	switch(map[r][c]){
+		case 1:
+			//print pill
+			print_circle(PILL_DIM, Xpos, Ypos, Pink);
+			break;
+		case 4:
+			//print gate
+			print_gate(r, c, x_margin, y_margin);
+			break;
+		case 6:
+			//print ppill
+			print_circle(PPILL_DIM, Xpos, Ypos, Pink);
+			break;
+		default:
+			break;
+	}
 	
 		if (ghost.dir == G_LEFT || ghost.dir == G_UP){
 			for(i=0; i<N; i++){
@@ -426,6 +448,72 @@ void ghost_clear(uint16_t Xpos, uint16_t Ypos){
 		}
 	}
 	
+}
+
+void ghost_change_dir(uint8_t g_c, uint8_t g_r, uint8_t p_c, uint8_t p_r){
+	uint8_t best_r = g_r;
+	uint8_t best_c = g_c;
+	int min_dist = N*N;
+	uint8_t new_r, new_c, best_dir, new_dir;
+	int moves[4][3] = {
+        {-1, 0, G_UP}, // Up
+        {1, 0, G_DOWN},  // Down
+        {0, -1, G_LEFT}, // Left
+        {0, 1, G_RIGHT}   // Right
+    };
+	int i, dist;
+		
+	best_dir = ghost.dir;
+		
+	for(i=0; i<4; i++){
+		new_r = g_r + moves[i][0];
+		new_c = g_c + moves[i][1];
+		new_dir = moves[i][2];
+		
+		if (new_r >= 0 && new_r < MAP_R && new_c >= 0 && new_c < MAP_C && map[new_r][new_c] != 0) {
+			dist = abs(new_r - p_r) + abs(new_c - p_c);
+			
+			// Update the best move if this one is better
+      if (dist < min_dist) {
+          min_dist = dist;
+          best_r = new_r;
+          best_c = new_c;
+				  best_dir = new_dir;
+      }
+		}
+	}
+	
+	ghost.dir = best_dir;
+
+}
+
+void ghost_pos_update(uint8_t g_r, uint8_t g_c, uint8_t p_r, uint8_t p_c){
+	
+		if((ghost.posX-x_margin-MAP_N/2) % MAP_N == 0 && (ghost.posY-y_margin-MAP_N/2) % MAP_N == 0)
+			ghost_change_dir(g_c, g_r, p_c, p_r);
+	
+			//position update
+		switch(ghost.dir){
+				case G_UP:
+					if(map[g_r-1][g_c]!=0)
+						ghost.posY -= ghost.speed;
+					break;
+				case G_DOWN:
+					if(map[g_r+1][g_c]!=0)
+						ghost.posY += ghost.speed;
+					break;
+				case G_LEFT:
+					if(map[g_r][g_c-1]!=0)
+						ghost.posX -= ghost.speed;
+					break;
+				case G_RIGHT:
+					if(map[g_r][g_c+1]!=0)
+						ghost.posX += ghost.speed;
+					break;
+				default:
+					break;
+		}
+		
 }
 
 void counter_update(){
@@ -509,6 +597,7 @@ void ppill_generate(){
 		
 	pills.v_pills[pos].PowerPill = 1;
 	map2pixels(pills.v_pills[pos].r, pills.v_pills[pos].c, &posX, &posY);
+	map[pills.v_pills[pos].r][pills.v_pills[pos].c] = 6;
 	print_circle(PPILL_DIM, posX, posY, Pink);
 	pills.pp_i++;
 	
@@ -553,6 +642,10 @@ void map_init(){
 					break;
 				case 5:
 					ghost_init(x_margin+j*MAP_N+(MAP_N/2), y_margin+i*MAP_N+(MAP_N/2), G_SPEED);
+				  map[i][j] = 3;
+				break;
+				default:
+					break;
 			}
 		}
 	}
