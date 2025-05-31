@@ -7,5 +7,5 @@ Each part of the assignment was about the usage of a different aspect of the boa
 The second part focus has been the usage of the embedded speaker and CAN bus.
 
 <video width="320" height="240" controls>
-  <source src="pac-man-emulator.mp4" type="video/mp4">
+  <source src="https://github.com/MartinaPlumari/Pac-Man-LandTiger/blob/master/pac-man-emulator.mp4" type="video/mp4">
 </video>
