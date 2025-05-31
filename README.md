@@ -9,11 +9,11 @@ The second part focus has been the usage of the embedded speaker and CAN bus.
 ### Emulated game
 
 <p align="center">
-  <img width=500px src="https://github.com/MartinaPlumari/Pac-Man-LandTiger/blob/master/pacman-emulator.gif" />
+  <img width=500px src="https://github.com/MartinaPlumari/Pac-Man-LandTiger/blob/master/final-result-emu.gif" />
 </p>
 
 ### Game on the LandTiger board
 
 <p align="center">
-  <img width=500px src="https://github.com/MartinaPlumari/Pac-Man-LandTiger/blob/master/pacman-emulator.gif" />
+  <img width=500px src="https://github.com/MartinaPlumari/Pac-Man-LandTiger/blob/master/game-on-board.gif" />
 </p>
