@@ -6,6 +6,14 @@ The basic idea is to create a Pac-Man game on a Landtiger board, using the perip
 Each part of the assignment was about the usage of a different aspect of the board. The first part focus has been the usage of the embedded LCD display, timers, joystick and buttons. 
 The second part focus has been the usage of the embedded speaker and CAN bus.
 
+### Emulated game
+
+<p align="center">
+  <img width=500px src="https://github.com/MartinaPlumari/Pac-Man-LandTiger/blob/master/pacman-emulator.gif" />
+</p>
+
+### Game on the LandTiger board
+
 <p align="center">
   <img width=500px src="https://github.com/MartinaPlumari/Pac-Man-LandTiger/blob/master/pacman-emulator.gif" />
 </p>
